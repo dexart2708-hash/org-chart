@@ -27,7 +27,7 @@
   <style>
     :root {
       --bg-1: #f8fafc; --bg-2: #e2e8f0;
-      --surface: rgba(255,255,255,0.92); --surface-solid: #ffffff;
+      --surface: rgba(255,255,255,0.95); --surface-solid: #ffffff;
       --surface-alt: #f1f5f9;
       --border: #cbd5e1; --border-strong: #94a3b8;
       --card-border: rgba(255,255,255,0.8);
@@ -38,7 +38,7 @@
       
       --shadow-sm: 0 1px 3px rgba(15,23,42,0.1);
       --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.1);
-      --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.15);
       
       --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --transition: 0.2s ease;
@@ -46,7 +46,7 @@
 
     [data-theme="dark"] {
       --bg-1: #0f172a; --bg-2: #1e293b;
-      --surface: rgba(30,41,59,0.85); --surface-solid: #1e293b;
+      --surface: rgba(30,41,59,0.95); --surface-solid: #1e293b;
       --surface-alt: #334155;
       --border: #334155; --border-strong: #475569;
       --card-border: rgba(255,255,255,0.1);
@@ -60,15 +60,13 @@
     html, body {
       font-family: var(--font); color: var(--text);
       -webkit-font-smoothing: antialiased;
-      line-height: 1.5; min-height: 100vh;
-      background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
-      background-attachment: fixed;
-      overflow: auto; /* Позволяем скроллить большие деревья */
+      line-height: 1.5; height: 100vh; overflow: hidden;
+      background: var(--bg-1);
     }
 
     /* Шапка */
     .header {
-      position: sticky; top: 0; z-index: 10;
+      position: absolute; top: 0; left: 0; right: 0; z-index: 10;
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 24px;
       background: var(--surface); backdrop-filter: blur(12px);
@@ -92,84 +90,58 @@
     .btn.secondary { background: var(--surface-solid); color: var(--text); border-color: var(--border); }
     .btn.secondary:hover { background: var(--surface-alt); }
 
-    /* Контейнер для дерева */
-    .tree-container {
-      padding: 40px;
-      display: flex;
-      justify-content: center;
-      min-width: max-content; /* Чтобы дерево не сжималось */
+    /* Бесконечный холст */
+    .canvas-container {
+      position: absolute; inset: 0;
+      top: 73px; /* Высота шапки */
+      overflow: auto;
+      background-image: radial-gradient(var(--border) 1px, transparent 1px);
+      background-size: 20px 20px;
     }
-
-    /* --- CSS ДЛЯ ДЕРЕВА (классический подход) --- */
-    .tree ul {
-      padding-top: 20px; position: relative;
-      transition: all 0.5s;
-      display: flex; justify-content: center;
-    }
-    .tree li {
-      float: left; text-align: center;
-      list-style-type: none;
+    .canvas {
       position: relative;
-      padding: 20px 5px 0 5px;
-      transition: all 0.5s;
+      width: 3000px; height: 3000px;
+      min-width: 100%; min-height: 100%;
     }
-    /* Рисуем линии */
-    .tree li::before, .tree li::after {
-      content: ''; position: absolute; top: 0; right: 50%;
-      border-top: 2px solid var(--line-color);
-      width: 50%; height: 20px;
-    }
-    .tree li::after {
-      right: auto; left: 50%;
-      border-left: 2px solid var(--line-color);
-    }
-    /* Убираем линии у единственного ребенка */
-    .tree li:only-child::after, .tree li:only-child::before { display: none; }
-    .tree li:only-child { padding-top: 0; }
-    /* Убираем левую линию у первого и правую у последнего */
-    .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
-    /* Добавляем вертикальную линию вниз для последнего */
-    .tree li:last-child::before {
-      border-right: 2px solid var(--line-color);
-      border-radius: 0 5px 0 0;
-    }
-    .tree li:first-child::after {
-      border-radius: 5px 0 0 0;
-    }
-    /* Вертикальная линия от родителя */
-    .tree ul ul::before {
-      content: ''; position: absolute; top: 0; left: 50%;
-      border-left: 2px solid var(--line-color);
-      width: 0; height: 20px;
+    #lines {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; z-index: 1;
     }
 
     /* Карточка должности */
     .org-card {
+      position: absolute;
       background: var(--surface-solid);
       border: 1px solid var(--border);
       border-radius: 12px;
       padding: 12px 16px;
-      display: inline-flex;
+      display: flex;
       flex-direction: column;
       align-items: center;
       min-width: 180px;
       max-width: 240px;
       box-shadow: var(--shadow-sm);
-      transition: all var(--transition);
-      position: relative;
-      text-decoration: none;
-      color: inherit;
-      cursor: default;
+      transition: box-shadow var(--transition), border-color var(--transition);
+      z-index: 2;
+      cursor: grab;
+      touch-action: none; /* Важно для перетаскивания на мобильных */
+      user-select: none;
     }
+    .org-card:active { cursor: grabbing; }
     .org-card:hover {
       border-color: var(--accent);
       box-shadow: var(--shadow-md);
-      transform: translateY(-2px);
+    }
+    .org-card.dragging {
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent);
+      z-index: 100;
     }
     
     /* Стили для текста в карточке */
-    .org-role { font-weight: 700; font-size: 0.875rem; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
-    .org-name { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+    .org-role { font-weight: 700; font-size: 0.875rem; color: var(--text); line-height: 1.2; margin-bottom: 4px; text-align: center; }
+    .org-name { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; text-align: center; }
     .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
 
     /* Кнопки действий на карточке */
@@ -196,14 +168,16 @@
 
     /* Стили для пустого состояния */
     .empty-state {
-      text-align: center; padding: 60px 20px; color: var(--text-muted);
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      text-align: center; color: var(--text-muted);
       display: flex; flex-direction: column; align-items: center; gap: 16px;
+      pointer-events: none; z-index: 0;
     }
     .empty-state h2 { color: var(--text); font-size: 1.5rem; }
 
     /* Модальное окно */
     .modal-overlay {
-      position: fixed; inset: 0; z-index: 100;
+      position: fixed; inset: 0; z-index: 1000;
       background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
       display: none; align-items: center; justify-content: center; padding: 20px;
     }
@@ -230,16 +204,11 @@
     .modal-footer { display: flex; gap: 10px; margin-top: 24px; }
     .modal-footer button { flex: 1; justify-content: center; padding: 12px; }
 
-    /* Адаптив */
     @media (max-width: 720px) {
       .header { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
       .controls { width: 100%; justify-content: space-between; }
-      .tree-container { padding: 20px 10px; }
-      .tree li { padding: 20px 2px 0 2px; }
+      .canvas-container { top: 100px; }
       .org-card { min-width: 140px; padding: 10px; }
-      .org-role { font-size: 0.75rem; }
-      .org-name { font-size: 0.6875rem; }
-      .org-dept { font-size: 0.625rem; }
     }
   </style>
 </head>
@@ -248,7 +217,7 @@
   <div class="header">
     <div class="header-left">
       <div class="title">Оргструктура</div>
-      <div class="subtitle">Иерархия должностей</div>
+      <div class="subtitle">Схема компании</div>
     </div>
     <div class="controls">
       <button class="btn secondary" id="themeToggle">🌙 Тема</button>
@@ -256,8 +225,12 @@
     </div>
   </div>
 
-  <div class="tree-container" id="treeContainer">
-    <!-- Дерево будет отрисовано здесь -->
+  <!-- Холст для перетаскивания -->
+  <div class="canvas-container" id="canvasContainer">
+    <div class="canvas" id="canvas">
+      <svg id="lines"></svg>
+      <!-- Карточки будут добавляться сюда -->
+    </div>
   </div>
 
   <!-- Модальное окно -->
@@ -302,8 +275,7 @@
       deleteDoc,
       query,
       onSnapshot,
-      serverTimestamp,
-      getDocs
+      serverTimestamp
     } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -345,69 +317,173 @@
       });
     }
 
-    // Отрисовка дерева
+    // Отрисовка карточек и линий
     function renderTree() {
-      const container = document.getElementById('treeContainer');
-      
-      // Если нет данных — показываем пустое состояние
+      const canvas = document.getElementById('canvas');
+      const emptyState = document.querySelector('.empty-state');
+
+      // Удаляем старые карточки, оставляя только SVG
+      Array.from(canvas.children).forEach(child => {
+        if (child.tagName !== 'svg') child.remove();
+      });
+
       if (allNodes.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <h2>Структура пуста</h2>
-            <p>Нажмите «Добавить верхушку», чтобы создать первую должность (например, Генерального директора).</p>
-          </div>
-        `;
+        if (!emptyState) {
+          const div = document.createElement('div');
+          div.className = 'empty-state';
+          div.innerHTML = `
+            <h2>Схема пуста</h2>
+            <p>Нажмите «Добавить верхушку», чтобы создать первую должность.</p>
+          `;
+          canvas.appendChild(div);
+        }
+        document.getElementById('lines').innerHTML = '';
         return;
       }
 
-      // Строим иерархию
-      const rootNodes = allNodes.filter(n => !n.parentId);
-      
-      // Функция рекурсивного построения HTML
-      function buildHTML(node) {
-        const children = allNodes.filter(n => n.parentId === node.id);
+      if (emptyState) emptyState.remove();
+
+      allNodes.forEach(node => {
+        const el = document.createElement('div');
+        el.className = 'org-card';
+        el.id = `node-${node.id}`;
         
-        let html = `
-          <li>
-            <div class="org-card">
-              <div class="org-actions">
-                <button class="add-btn" onclick="openModal(null, '${node.id}')" title="Добавить подчиненного">➕</button>
-                <button onclick="openModal('${node.id}')" title="Редактировать">✏️</button>
-                <button class="delete-btn" onclick="deleteNode('${node.id}')" title="Удалить">🗑️</button>
-              </div>
-              <div class="org-role">${esc(node.role)}</div>
-              ${node.name ? `<div class="org-name">${esc(node.name)}</div>` : ''}
-              ${node.dept ? `<div class="org-dept">${esc(node.dept)}</div>` : ''}
-            </div>
+        // Если координат нет (например, старые данные или только что созданная), ставим по умолчанию
+        let x = node.x !== undefined ? node.x : 100;
+        let y = node.y !== undefined ? node.y : 100;
+        
+        el.style.left = `${x}px`;
+        el.style.top = `${y}px`;
+
+        el.innerHTML = `
+          <div class="org-actions">
+            <button class="add-btn" onclick="openModal(null, '${node.id}')" title="Добавить подчиненного">➕</button>
+            <button onclick="openModal('${node.id}')" title="Редактировать">✏️</button>
+            <button class="delete-btn" onclick="deleteNode('${node.id}')" title="Удалить">🗑️</button>
+          </div>
+          <div class="org-role">${esc(node.role)}</div>
+          ${node.name ? `<div class="org-name">${esc(node.name)}</div>` : ''}
+          ${node.dept ? `<div class="org-dept">${esc(node.dept)}</div>` : ''}
         `;
 
-        if (children.length > 0) {
-          html += `<ul>`;
-          children.forEach(child => {
-            html += buildHTML(child);
-          });
-          html += `</ul>`;
-        }
-
-        html += `</li>`;
-        return html;
-      }
-
-      let finalHTML = `<div class="tree"><ul>`;
-      rootNodes.forEach(root => {
-        finalHTML += buildHTML(root);
+        // Включаем перетаскивание
+        makeDraggable(el, node);
+        canvas.appendChild(el);
       });
-      finalHTML += `</ul></div>`;
 
-      container.innerHTML = finalHTML;
+      // Рисуем линии после того, как карточки добавлены в DOM
+      setTimeout(drawLines, 50);
     }
 
-    // Вспомогательная функция для экранирования HTML
+    // Отрисовка SVG линий
+    function drawLines() {
+      const svg = document.getElementById('lines');
+      svg.innerHTML = '';
+      const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+
+      allNodes.forEach(node => {
+        if (!node.parentId) return;
+        const parent = allNodes.find(n => n.id === node.parentId);
+        if (!parent) return;
+
+        const pEl = document.getElementById(`node-${parent.id}`);
+        const cEl = document.getElementById(`node-${node.id}`);
+        if (!pEl || !cEl) return;
+
+        const pRect = pEl.getBoundingClientRect();
+        const cRect = cEl.getBoundingClientRect();
+
+        // Координаты центров
+        const x1 = pRect.left - canvasRect.left + pRect.width / 2;
+        const y1 = pRect.top - canvasRect.top + pRect.height;
+        const x2 = cRect.left - canvasRect.left + cRect.width / 2;
+        const y2 = cRect.top - canvasRect.top;
+
+        // Строим ортогональный путь (с прямыми углами)
+        const midY = y1 + (y2 - y1) / 2;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${x1} ${y1} V ${midY} H ${x2} V ${y2}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'var(--line-color)');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linejoin', 'round');
+        svg.appendChild(path);
+      });
+    }
+
+    // Логика перетаскивания (Pointer Events для мыши и тача)
+    function makeDraggable(el, node) {
+      let isDragging = false;
+      let startX, startY;
+      let initialX = node.x || 0;
+      let initialY = node.y || 0;
+
+      el.addEventListener('pointerdown', (e) => {
+        // Игнорируем клики по кнопкам
+        if (e.target.closest('.org-actions')) return;
+        
+        e.preventDefault(); // Предотвращаем скролл страницы при перетаскивании
+        isDragging = true;
+        el.classList.add('dragging');
+        el.setPointerCapture(e.pointerId);
+
+        startX = e.clientX;
+        startY = e.clientY;
+        initialX = node.x || 0;
+        initialY = node.y || 0;
+      });
+
+      el.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        const newX = initialX + dx;
+        const newY = initialY + dy;
+
+        el.style.left = `${newX}px`;
+        el.style.top = `${newY}px`;
+
+        // Обновляем локальные координаты для линий
+        node.x = newX;
+        node.y = newY;
+        
+        // Перерисовываем линии в реальном времени
+        drawLines();
+      });
+
+      el.addEventListener('pointerup', async (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        el.classList.remove('dragging');
+        el.releasePointerCapture(e.pointerId);
+
+        // Сохраняем в базу
+        try {
+          await updateDoc(doc(db, COLLECTION, node.id), {
+            x: node.x,
+            y: node.y
+          });
+        } catch (err) {
+          console.error('Ошибка сохранения координат:', err);
+        }
+      });
+      
+      // Отмена при выходе за пределы
+      el.addEventListener('pointercancel', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        el.classList.remove('dragging');
+        el.releasePointerCapture(e.pointerId);
+      });
+    }
+
     function esc(s) {
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // --- Модальное окно и управление ---
+    // --- Модальное окно ---
     const modal = document.getElementById('modalOverlay');
     const form = document.getElementById('nodeForm');
 
@@ -435,12 +511,13 @@
     document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null));
     document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
     
-    // Закрытие по клику вне окна
-    modal.addEventListener('click', (e) => {
+    // ✅ ИСПРАВЛЕНИЕ БАГА: Закрываем окно только по Mousedown (строго по фону).
+    // Если начать выделять текст в инпуте и увести мышь за пределы - окно не закроется.
+    modal.addEventListener('mousedown', (e) => {
       if (e.target === modal) modal.classList.remove('visible');
     });
 
-    // Сохранение (добавление или редактирование)
+    // Сохранение
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('nodeId').value;
@@ -461,6 +538,20 @@
         if (editId) {
           await updateDoc(doc(db, COLLECTION, editId), data);
         } else {
+          // Если это новый подчиненный, ставим его под родителем
+          if (parentId) {
+            const parent = allNodes.find(n => n.id === parentId);
+            if (parent) {
+              data.x = (parent.x || 100) + (Math.random() * 40 - 20); // небольшой рандом, чтобы не накладывались
+              data.y = (parent.y || 100) + 160; 
+            } else {
+              data.x = 100; data.y = 100;
+            }
+          } else {
+            // Новая верхушка (по центру экрана)
+            data.x = 300; data.y = 100;
+          }
+          
           data.createdAt = serverTimestamp();
           await addDoc(collection(db, COLLECTION), data);
         }
@@ -474,12 +565,11 @@
       }
     });
 
-    // Удаление (с каскадным удалением подчиненных)
+    // Удаление (с каскадом)
     window.deleteNode = async (id) => {
       const node = allNodes.find(n => n.id === id);
       if (!node) return;
 
-      // Функция для поиска всех потомков
       const getDescendants = (parentId) => {
         let descendants = [];
         const children = allNodes.filter(n => n.parentId === parentId);
@@ -494,13 +584,12 @@
       const count = descendants.length;
 
       const confirmText = count > 0 
-        ? `Удалить должность "${node.role}" и всех её подчиненных (${count} чел.)? Это действие нельзя отменить.`
+        ? `Удалить должность "${node.role}" и всех её подчиненных (${count} чел.)?`
         : `Удалить должность "${node.role}"?`;
 
       if (!confirm(confirmText)) return;
 
       try {
-        // Удаляем саму ноду и всех потомков
         const idsToDelete = [id, ...descendants];
         const promises = idsToDelete.map(nodeId => deleteDoc(doc(db, COLLECTION, nodeId)));
         await Promise.all(promises);
@@ -509,6 +598,9 @@
         alert('Не удалось удалить: ' + err.message);
       }
     };
+
+    // Обработка ресайза окна (чтобы линии не отрывались)
+    window.addEventListener('resize', drawLines);
 
     // Старт
     subscribeToData();
