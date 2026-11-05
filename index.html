@@ -93,11 +93,7 @@
     }
     
     .logo-area { display: flex; align-items: center; gap: 14px; }
-    
-    .logo-icon {
-      width: 48px; height: 48px;
-      object-fit: contain;
-    }
+    .logo-icon { width: 48px; height: 48px; object-fit: contain; }
     
     .title { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
     .subtitle { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;}
@@ -142,7 +138,7 @@
       pointer-events: none; z-index: 1;
     }
 
-    /* Карточка должности */
+    /* Карточка */
     .org-card {
       position: absolute;
       background: var(--surface-solid);
@@ -161,10 +157,27 @@
       box-shadow: var(--shadow-lg); border-color: var(--accent);
       z-index: 100; cursor: grabbing; opacity: 0.9;
     }
+
+    /* Стили для отделов (выделяем их) */
+    .org-card.is-department {
+      background: var(--accent-soft);
+      border: 2px solid var(--accent);
+    }
+
+    /* ✅ ОДИНАКОВЫЙ ШРИФТ ДЛЯ ДОЛЖНОСТИ И ИМЕНИ */
+    .org-role, .org-name { 
+      font-size: 0.9375rem; /* Одинаковый размер */
+      font-weight: 700;    /* Одинаковая жирность */
+      text-align: center; 
+      line-height: 1.3;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .org-role { color: var(--text); }
+    .org-name { color: var(--text-muted); }
     
-    .org-role { font-weight: 700; font-size: 0.875rem; color: var(--text); line-height: 1.2; margin-bottom: 4px; text-align: center; }
-    .org-name { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; text-align: center; }
-    .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+    .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+    [data-theme="dark"] .org-dept { background: rgba(255,255,255,0.1); }
     
     .org-issues {
       font-size: 0.75rem; color: var(--text-muted);
@@ -246,7 +259,6 @@
 
   <div class="header">
     <div class="logo-area">
-      <!-- Не забудьте, что файл logo.png должен лежать в репозитории -->
       <img src="logo.png" alt="Сеть отелей Номера" class="logo-icon" onerror="this.style.display='none'">
       <div>
         <div class="title">Сеть отелей Номера</div>
@@ -256,41 +268,43 @@
     <div class="controls">
       <button class="btn secondary" id="resetViewBtn" title="Центрировать на карточках">🎯 Центр</button>
       <button class="btn secondary" id="themeToggle">🌙 Тема</button>
-      <button class="btn" id="addRootBtn">➕ Добавить верхушку</button>
+      <button class="btn" id="addRootBtn">➕ Добавить Отдел</button>
     </div>
   </div>
 
-  <!-- Холст для перетаскивания -->
   <div class="canvas-container" id="canvasContainer">
     <div class="canvas" id="canvas">
       <svg id="lines"></svg>
-      <!-- Карточки -->
     </div>
   </div>
 
   <!-- Модальное окно -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
-      <div class="modal-title" id="modalTitle">Добавить должность</div>
+      <div class="modal-title" id="modalTitle">Добавить Отдел</div>
       <form id="nodeForm">
         <input type="hidden" id="nodeId">
         <input type="hidden" id="parentId">
+        <input type="hidden" id="isDepartment">
         
-        <div class="field">
-          <label>Название должности *</label>
-          <input type="text" id="role" placeholder="Например: Генеральный директор" required>
+        <div class="field" id="fieldRole">
+          <label id="labelRole">Название отдела *</label>
+          <input type="text" id="role" placeholder="Например: Отдел продаж" required>
         </div>
-        <div class="field">
+        
+        <div class="field field-employee" id="fieldName">
           <label>ФИО сотрудника</label>
           <input type="text" id="name" placeholder="Например: Иванов Иван">
         </div>
-        <div class="field">
+        
+        <div class="field field-employee" id="fieldDept">
           <label>Отдел / Департамент</label>
           <input type="text" id="dept" placeholder="Например: Администрация">
         </div>
-        <div class="field">
+        
+        <div class="field field-employee" id="fieldIssues">
           <label>По каким вопросам обращаться</label>
-          <textarea id="issues" placeholder="Например: Бронирование, VIP-клиенты, Жалобы..."></textarea>
+          <textarea id="issues" placeholder="Например: Бронирование, VIP-клиенты..."></textarea>
         </div>
         
         <div class="modal-footer">
@@ -343,34 +357,25 @@
       localStorage.setItem('theme', next);
     });
 
-    // ✅ УМНОЕ ЦЕНТРИРОВАНИЕ: Находим все карточки и скроллим к ним
+    // Центрирование
     document.getElementById('resetViewBtn').addEventListener('click', () => {
       if (allNodes.length === 0) {
         document.getElementById('canvasContainer').scrollTo({ top: 0, left: 0, behavior: 'smooth' });
         return;
       }
-
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
       allNodes.forEach(node => {
         const el = document.getElementById(`node-${node.id}`);
         if (el) {
-          const x = node.x || 0;
-          const y = node.y || 0;
-          minX = Math.min(minX, x);
-          minY = Math.min(minY, y);
-          maxX = Math.max(maxX, x + el.offsetWidth);
-          maxY = Math.max(maxY, y + el.offsetHeight);
+          const x = node.x || 0; const y = node.y || 0;
+          minX = Math.min(minX, x); minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x + el.offsetWidth); maxY = Math.max(maxY, y + el.offsetHeight);
         }
       });
-
-      const centerX = (minX + maxX) / 2;
-      const centerY = (minY + maxY) / 2;
-      
       const container = document.getElementById('canvasContainer');
       container.scrollTo({
-        top: centerY - container.clientHeight / 2,
-        left: centerX - container.clientWidth / 2,
+        top: (minY + maxY) / 2 - container.clientHeight / 2,
+        left: (minX + maxX) / 2 - container.clientWidth / 2,
         behavior: 'smooth'
       });
     });
@@ -403,7 +408,7 @@
           div.className = 'empty-state';
           div.innerHTML = `
             <h2>Схема пуста</h2>
-            <p>Нажмите «Добавить верхушку», чтобы создать первую должность.</p>
+            <p>Нажмите «Добавить Отдел», чтобы создать первый отдел.</p>
           `;
           canvas.appendChild(div);
         }
@@ -415,7 +420,7 @@
 
       allNodes.forEach(node => {
         const el = document.createElement('div');
-        el.className = 'org-card';
+        el.className = `org-card ${node.isDepartment ? 'is-department' : ''}`;
         el.id = `node-${node.id}`;
         
         let x = node.x !== undefined ? node.x : 100;
@@ -424,7 +429,7 @@
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
 
-        const issuesHtml = node.issues ? `
+        const issuesHtml = (!node.isDepartment && node.issues) ? `
           <div class="org-issues">
             <strong>💬 Вопросы:</strong>
             ${esc(node.issues)}
@@ -433,13 +438,13 @@
 
         el.innerHTML = `
           <div class="org-actions">
-            <button class="add-btn" onclick="openModal(null, '${node.id}')" title="Добавить подчиненного">➕</button>
+            <button class="add-btn" onclick="openModal(null, '${node.id}', false)" title="${node.isDepartment ? 'Добавить сотрудника' : 'Добавить подчиненного'}">➕</button>
             <button onclick="openModal('${node.id}')" title="Редактировать">✏️</button>
             <button class="delete-btn" onclick="deleteNode('${node.id}')" title="Удалить">🗑️</button>
           </div>
           <div class="org-role">${esc(node.role)}</div>
-          ${node.name ? `<div class="org-name">${esc(node.name)}</div>` : ''}
-          ${node.dept ? `<div class="org-dept">${esc(node.dept)}</div>` : ''}
+          ${(!node.isDepartment && node.name) ? `<div class="org-name">${esc(node.name)}</div>` : ''}
+          ${(!node.isDepartment && node.dept) ? `<div class="org-dept">${esc(node.dept)}</div>` : ''}
           ${issuesHtml}
         `;
 
@@ -477,17 +482,14 @@
         const diffY = Math.abs(py - cy);
 
         let pathD = '';
-
         if (diffY > diffX) {
           const startY = py < cy ? pRect.bottom - canvasRect.top : pRect.top - canvasRect.top;
           const endY = py < cy ? cRect.top - canvasRect.top : cRect.bottom - canvasRect.top;
-          const midY = startY + (endY - startY) / 2;
-          pathD = `M ${px} ${startY} V ${midY} H ${cx} V ${endY}`;
+          pathD = `M ${px} ${startY} V ${(startY + endY) / 2} H ${cx} V ${endY}`;
         } else {
           const startX = px < cx ? pRect.right - canvasRect.left : pRect.left - canvasRect.left;
           const endX = px < cx ? cRect.left - canvasRect.left : cRect.right - canvasRect.left;
-          const midX = startX + (endX - startX) / 2;
-          pathD = `M ${startX} ${py} H ${midX} V ${cy} H ${endX}`;
+          pathD = `M ${startX} ${py} H ${(startX + endX) / 2} V ${cy} H ${endX}`;
         }
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -503,9 +505,7 @@
     // Перетаскивание
     function makeDraggable(el, node) {
       let isDragging = false;
-      let startX, startY;
-      let initialX = node.x || 0;
-      let initialY = node.y || 0;
+      let startX, startY, initialX = node.x || 0, initialY = node.y || 0;
 
       el.addEventListener('pointerdown', (e) => {
         if (e.target.closest('.org-actions')) return;
@@ -513,27 +513,16 @@
         isDragging = true;
         el.classList.add('dragging');
         el.setPointerCapture(e.pointerId);
-
-        startX = e.clientX;
-        startY = e.clientY;
-        initialX = node.x || 0;
-        initialY = node.y || 0;
+        startX = e.clientX; startY = e.clientY;
       });
 
       el.addEventListener('pointermove', (e) => {
         if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-
-        const newX = initialX + dx;
-        const newY = initialY + dy;
-
+        const newX = initialX + (e.clientX - startX);
+        const newY = initialY + (e.clientY - startY);
         el.style.left = `${newX}px`;
         el.style.top = `${newY}px`;
-
-        node.x = newX;
-        node.y = newY;
-        
+        node.x = newX; node.y = newY;
         drawLines();
       });
 
@@ -542,22 +531,9 @@
         isDragging = false;
         el.classList.remove('dragging');
         el.releasePointerCapture(e.pointerId);
-
         try {
-          await updateDoc(doc(db, COLLECTION, node.id), {
-            x: node.x,
-            y: node.y
-          });
-        } catch (err) {
-          console.error('Ошибка сохранения координат:', err);
-        }
-      });
-      
-      el.addEventListener('pointercancel', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        el.classList.remove('dragging');
-        el.releasePointerCapture(e.pointerId);
+          await updateDoc(doc(db, COLLECTION, node.id), { x: node.x, y: node.y });
+        } catch (err) {}
       });
     }
 
@@ -565,50 +541,77 @@
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g, '<br>');
     }
 
-    // Модальное окно
+    // --- Модальное окно ---
     const modal = document.getElementById('modalOverlay');
     const form = document.getElementById('nodeForm');
 
-    window.openModal = (editId = null, parentId = null) => {
+    window.openModal = (editId = null, parentId = null, isDeptArg = null) => {
       form.reset();
       document.getElementById('nodeId').value = editId || '';
       document.getElementById('parentId').value = parentId || '';
 
+      let isDepartment = false;
+
       if (editId) {
+        // Редактирование существующей
         const node = allNodes.find(n => n.id === editId);
         if (node) {
-          document.getElementById('modalTitle').textContent = 'Редактировать должность';
+          isDepartment = !!node.isDepartment;
+          document.getElementById('modalTitle').textContent = isDepartment ? 'Редактировать Отдел' : 'Редактировать Сотрудника';
           document.getElementById('role').value = node.role || '';
           document.getElementById('name').value = node.name || '';
           document.getElementById('dept').value = node.dept || '';
           document.getElementById('issues').value = node.issues || '';
         }
       } else {
-        document.getElementById('modalTitle').textContent = parentId ? 'Добавить подчиненного' : 'Добавить верхушку';
+        // Создание новой
+        isDepartment = !!isDeptArg;
+        if (isDepartment) {
+          document.getElementById('modalTitle').textContent = 'Новый Отдел';
+        } else {
+          const parent = allNodes.find(n => n.id === parentId);
+          document.getElementById('modalTitle').textContent = `Новый сотрудник ${parent ? 'в ' + parent.role : ''}`;
+        }
+      }
+
+      // Настраиваем поля
+      document.getElementById('isDepartment').value = isDepartment;
+      
+      if (isDepartment) {
+        document.getElementById('labelRole').textContent = 'Название отдела *';
+        document.getElementById('role').placeholder = 'Например: Отдел продаж';
+        document.querySelectorAll('.field-employee').forEach(el => el.style.display = 'none');
+      } else {
+        document.getElementById('labelRole').textContent = 'Должность *';
+        document.getElementById('role').placeholder = 'Например: Менеджер';
+        document.querySelectorAll('.field-employee').forEach(el => el.style.display = 'flex');
       }
       
       modal.classList.add('visible');
       document.getElementById('role').focus();
     };
 
-    document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null));
+    document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null, true));
     document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
     
     modal.addEventListener('mousedown', (e) => {
       if (e.target === modal) modal.classList.remove('visible');
     });
 
+    // Сохранение
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('nodeId').value;
       const parentId = document.getElementById('parentId').value;
+      const isDepartment = document.getElementById('isDepartment').value === 'true';
       
       const data = {
         role: document.getElementById('role').value.trim(),
-        name: document.getElementById('name').value.trim(),
-        dept: document.getElementById('dept').value.trim(),
-        issues: document.getElementById('issues').value.trim(),
-        parentId: parentId || null
+        name: isDepartment ? '' : document.getElementById('name').value.trim(),
+        dept: isDepartment ? '' : document.getElementById('dept').value.trim(),
+        issues: isDepartment ? '' : document.getElementById('issues').value.trim(),
+        parentId: parentId || null,
+        isDepartment: isDepartment
       };
 
       const btn = document.getElementById('submitBtn');
@@ -623,7 +626,7 @@
             const parent = allNodes.find(n => n.id === parentId);
             if (parent) {
               data.x = (parent.x || 100) + (Math.random() * 60 - 30); 
-              data.y = (parent.y || 100) + 160; 
+              data.y = (parent.y || 100) + 180; 
             } else {
               data.x = 300; data.y = 100;
             }
@@ -644,6 +647,7 @@
       }
     });
 
+    // Удаление
     window.deleteNode = async (id) => {
       const node = allNodes.find(n => n.id === id);
       if (!node) return;
@@ -662,8 +666,8 @@
       const count = descendants.length;
 
       const confirmText = count > 0 
-        ? `Удалить должность "${node.role}" и всех её подчиненных (${count} чел.)?`
-        : `Удалить должность "${node.role}"?`;
+        ? `Удалить "${node.role}" и всех её подчиненных (${count} чел.)?`
+        : `Удалить "${node.role}"?`;
 
       if (!confirm(confirmText)) return;
 
