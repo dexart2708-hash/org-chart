@@ -166,8 +166,8 @@
 
     /* ✅ ОДИНАКОВЫЙ ШРИФТ ДЛЯ ДОЛЖНОСТИ И ИМЕНИ */
     .org-role, .org-name { 
-      font-size: 0.9375rem; /* Одинаковый размер */
-      font-weight: 700;    /* Одинаковая жирность */
+      font-size: 0.9375rem;
+      font-weight: 700;
       text-align: center; 
       line-height: 1.3;
       margin-bottom: 4px;
@@ -204,6 +204,7 @@
     }
     .org-actions button:hover { background: var(--surface-alt); color: var(--text); }
     .org-actions button.add-btn:hover { color: var(--accent); background: var(--accent-soft); }
+    .org-actions button.link-btn:hover { color: #3b82f6; background: #eff6ff; }
     .org-actions button.delete-btn:hover { color: #dc2626; background: #fef2f2; }
 
     /* Пустое состояние */
@@ -234,14 +235,20 @@
     .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
     label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
     
-    input, textarea {
+    input, textarea, select {
       font-family: var(--font); font-size: 0.9375rem; padding: 10px 12px;
       color: var(--text); background: var(--bg-1);
       border: 1px solid var(--border-strong); border-radius: 8px; outline: none;
       transition: border-color var(--transition);
+      width: 100%;
+    }
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B665E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
     }
     textarea { resize: vertical; min-height: 70px; }
-    input:focus, textarea:focus { border-color: var(--accent); }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
     
     .modal-footer { display: flex; gap: 10px; margin-top: 24px; }
     .modal-footer button { flex: 1; justify-content: center; padding: 12px; }
@@ -284,9 +291,17 @@
       <div class="modal-title" id="modalTitle">Добавить Отдел</div>
       <form id="nodeForm">
         <input type="hidden" id="nodeId">
-        <input type="hidden" id="parentId">
         <input type="hidden" id="isDepartment">
         
+        <!-- Выбор родителя (Начальник / Отдел) -->
+        <div class="field" id="fieldParent" style="display: none;">
+          <label>Начальник / Входит в состав</label>
+          <select id="parentId">
+            <option value="">— Без начальника (Верхний уровень) —</option>
+            <!-- Опции добавятся в JS -->
+          </select>
+        </div>
+
         <div class="field" id="fieldRole">
           <label id="labelRole">Название отдела *</label>
           <input type="text" id="role" placeholder="Например: Отдел продаж" required>
@@ -318,17 +333,8 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
     import {
-      initializeFirestore,
-      persistentLocalCache,
-      persistentMultipleTabManager,
-      collection,
-      doc,
-      addDoc,
-      updateDoc,
-      deleteDoc,
-      query,
-      onSnapshot,
-      serverTimestamp
+      initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+      collection, doc, addDoc, updateDoc, deleteDoc, query, onSnapshot, serverTimestamp, getDocs
     } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -341,9 +347,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-    });
+    const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
     const COLLECTION = 'org_structure';
     let allNodes = [];
@@ -359,25 +363,17 @@
 
     // Центрирование
     document.getElementById('resetViewBtn').addEventListener('click', () => {
-      if (allNodes.length === 0) {
-        document.getElementById('canvasContainer').scrollTo({ top: 0, left: 0, behavior: 'smooth' });
-        return;
-      }
+      if (allNodes.length === 0) return;
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       allNodes.forEach(node => {
         const el = document.getElementById(`node-${node.id}`);
         if (el) {
-          const x = node.x || 0; const y = node.y || 0;
-          minX = Math.min(minX, x); minY = Math.min(minY, y);
-          maxX = Math.max(maxX, x + el.offsetWidth); maxY = Math.max(maxY, y + el.offsetHeight);
+          minX = Math.min(minX, node.x || 0); minY = Math.min(minY, node.y || 0);
+          maxX = Math.max(maxX, (node.x || 0) + el.offsetWidth); maxY = Math.max(maxY, (node.y || 0) + el.offsetHeight);
         }
       });
       const container = document.getElementById('canvasContainer');
-      container.scrollTo({
-        top: (minY + maxY) / 2 - container.clientHeight / 2,
-        left: (minX + maxX) / 2 - container.clientWidth / 2,
-        behavior: 'smooth'
-      });
+      container.scrollTo({ top: (minY + maxY) / 2 - container.clientHeight / 2, left: (minX + maxX) / 2 - container.clientWidth / 2, behavior: 'smooth' });
     });
 
     // Загрузка данных
@@ -389,7 +385,6 @@
         renderTree();
       }, err => {
         console.error('Ошибка загрузки:', err);
-        alert('Не удалось загрузить данные.');
       });
     }
 
@@ -406,10 +401,7 @@
         if (!emptyState) {
           const div = document.createElement('div');
           div.className = 'empty-state';
-          div.innerHTML = `
-            <h2>Схема пуста</h2>
-            <p>Нажмите «Добавить Отдел», чтобы создать первый отдел.</p>
-          `;
+          div.innerHTML = `<h2>Схема пуста</h2><p>Нажмите «Добавить Отдел», чтобы создать структуру.</p>`;
           canvas.appendChild(div);
         }
         document.getElementById('lines').innerHTML = '';
@@ -423,22 +415,17 @@
         el.className = `org-card ${node.isDepartment ? 'is-department' : ''}`;
         el.id = `node-${node.id}`;
         
-        let x = node.x !== undefined ? node.x : 100;
-        let y = node.y !== undefined ? node.y : 100;
-        
-        el.style.left = `${x}px`;
-        el.style.top = `${y}px`;
+        el.style.left = `${node.x !== undefined ? node.x : 100}px`;
+        el.style.top = `${node.y !== undefined ? node.y : 100}px`;
 
         const issuesHtml = (!node.isDepartment && node.issues) ? `
-          <div class="org-issues">
-            <strong>💬 Вопросы:</strong>
-            ${esc(node.issues)}
-          </div>
+          <div class="org-issues"><strong>💬 Вопросы:</strong>${esc(node.issues)}</div>
         ` : '';
 
         el.innerHTML = `
           <div class="org-actions">
             <button class="add-btn" onclick="openModal(null, '${node.id}', false)" title="${node.isDepartment ? 'Добавить сотрудника' : 'Добавить подчиненного'}">➕</button>
+            <button class="link-btn" onclick="openModal('${node.id}')" title="Связать с другим отделом/сотрудником">🔗</button>
             <button onclick="openModal('${node.id}')" title="Редактировать">✏️</button>
             <button class="delete-btn" onclick="deleteNode('${node.id}')" title="Удалить">🗑️</button>
           </div>
@@ -520,8 +507,7 @@
         if (!isDragging) return;
         const newX = initialX + (e.clientX - startX);
         const newY = initialY + (e.clientY - startY);
-        el.style.left = `${newX}px`;
-        el.style.top = `${newY}px`;
+        el.style.left = `${newX}px`; el.style.top = `${newY}px`;
         node.x = newX; node.y = newY;
         drawLines();
       });
@@ -544,16 +530,26 @@
     // --- Модальное окно ---
     const modal = document.getElementById('modalOverlay');
     const form = document.getElementById('nodeForm');
+    const parentSelect = document.getElementById('parentId');
+
+    // Рекурсивная функция поиска потомков (чтобы нельзя было зациклить)
+    const getDescendants = (parentId) => {
+      let descendants = [];
+      const children = allNodes.filter(n => n.parentId === parentId);
+      children.forEach(child => {
+        descendants.push(child.id);
+        descendants = descendants.concat(getDescendants(child.id));
+      });
+      return descendants;
+    };
 
     window.openModal = (editId = null, parentId = null, isDeptArg = null) => {
       form.reset();
-      document.getElementById('nodeId').value = editId || '';
-      document.getElementById('parentId').value = parentId || '';
-
+      
+      const isEditing = !!editId;
       let isDepartment = false;
 
-      if (editId) {
-        // Редактирование существующей
+      if (isEditing) {
         const node = allNodes.find(n => n.id === editId);
         if (node) {
           isDepartment = !!node.isDepartment;
@@ -564,7 +560,6 @@
           document.getElementById('issues').value = node.issues || '';
         }
       } else {
-        // Создание новой
         isDepartment = !!isDeptArg;
         if (isDepartment) {
           document.getElementById('modalTitle').textContent = 'Новый Отдел';
@@ -574,9 +569,35 @@
         }
       }
 
-      // Настраиваем поля
+      document.getElementById('nodeId').value = editId || '';
       document.getElementById('isDepartment').value = isDepartment;
       
+      // Заполняем список родителей
+      parentSelect.innerHTML = '<option value="">— Без начальника (Верхний уровень) —</option>';
+      
+      // Определяем, кого нельзя выбирать (себя и своих подчиненных)
+      const forbiddenIds = isEditing ? [editId, ...getDescendants(editId)] : [];
+
+      allNodes.forEach(n => {
+        if (forbiddenIds.includes(n.id)) return; // Пропускаем
+        const opt = document.createElement('option');
+        opt.value = n.id;
+        opt.textContent = n.role + (n.name ? ` (${n.name})` : '') + (n.isDepartment ? ' [Отдел]' : '');
+        parentSelect.appendChild(opt);
+      });
+
+      // Устанавливаем текущего родителя, если редактируем
+      if (isEditing) {
+        const node = allNodes.find(n => n.id === editId);
+        parentSelect.value = node.parentId || '';
+        document.getElementById('fieldParent').style.display = 'flex'; // Показываем выбор родителя
+      } else {
+        parentSelect.value = parentId || '';
+        // При создании нового скрываем выбор родителя, так как он передан из кнопки "+"
+        document.getElementById('fieldParent').style.display = 'none'; 
+      }
+
+      // Настраиваем поля
       if (isDepartment) {
         document.getElementById('labelRole').textContent = 'Название отдела *';
         document.getElementById('role').placeholder = 'Например: Отдел продаж';
@@ -602,15 +623,15 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('nodeId').value;
-      const parentId = document.getElementById('parentId').value;
       const isDepartment = document.getElementById('isDepartment').value === 'true';
+      const newParentId = parentSelect.value || null;
       
       const data = {
         role: document.getElementById('role').value.trim(),
         name: isDepartment ? '' : document.getElementById('name').value.trim(),
         dept: isDepartment ? '' : document.getElementById('dept').value.trim(),
         issues: isDepartment ? '' : document.getElementById('issues').value.trim(),
-        parentId: parentId || null,
+        parentId: newParentId,
         isDepartment: isDepartment
       };
 
@@ -620,10 +641,19 @@
 
       try {
         if (editId) {
+          const node = allNodes.find(n => n.id === editId);
+          // Если изменился родитель, нужно сдвинуть карточку, чтобы она оказалась рядом с новым шефом
+          if (node.parentId !== newParentId && newParentId) {
+            const newParent = allNodes.find(n => n.id === newParentId);
+            if (newParent) {
+              data.x = (newParent.x || 100) + (Math.random() * 60 - 30);
+              data.y = (newParent.y || 100) + 180;
+            }
+          }
           await updateDoc(doc(db, COLLECTION, editId), data);
         } else {
-          if (parentId) {
-            const parent = allNodes.find(n => n.id === parentId);
+          if (newParentId) {
+            const parent = allNodes.find(n => n.id === newParentId);
             if (parent) {
               data.x = (parent.x || 100) + (Math.random() * 60 - 30); 
               data.y = (parent.y || 100) + 180; 
@@ -651,16 +681,6 @@
     window.deleteNode = async (id) => {
       const node = allNodes.find(n => n.id === id);
       if (!node) return;
-
-      const getDescendants = (parentId) => {
-        let descendants = [];
-        const children = allNodes.filter(n => n.parentId === parentId);
-        children.forEach(child => {
-          descendants.push(child.id);
-          descendants = descendants.concat(getDescendants(child.id));
-        });
-        return descendants;
-      };
 
       const descendants = getDescendants(id);
       const count = descendants.length;
