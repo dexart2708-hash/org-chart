@@ -30,7 +30,6 @@
       --surface: rgba(255,255,255,0.95); --surface-solid: #ffffff;
       --surface-alt: #f1f5f9;
       --border: #cbd5e1; --border-strong: #94a3b8;
-      --card-border: rgba(255,255,255,0.8);
       --text: #0f172a; --text-muted: #475569;
       --accent: #2563eb; --accent-soft: #eff6ff;
       --line-color: #94a3b8;
@@ -49,7 +48,6 @@
       --surface: rgba(30,41,59,0.95); --surface-solid: #1e293b;
       --surface-alt: #334155;
       --border: #334155; --border-strong: #475569;
-      --card-border: rgba(255,255,255,0.1);
       --text: #f8fafc; --text-muted: #94a3b8;
       --accent: #3b82f6; --accent-soft: rgba(59,130,246,0.15);
       --line-color: #475569;
@@ -66,7 +64,7 @@
 
     /* Шапка */
     .header {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+      position: absolute; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 24px;
       background: var(--surface); backdrop-filter: blur(12px);
@@ -97,10 +95,12 @@
       overflow: auto;
       background-image: radial-gradient(var(--border) 1px, transparent 1px);
       background-size: 20px 20px;
+      background-position: 0 0;
     }
     .canvas {
       position: relative;
-      width: 3000px; height: 3000px;
+      width: 5000px; /* Огромный холст для полета фантазии */
+      height: 5000px;
       min-width: 100%; min-height: 100%;
     }
     #lines {
@@ -125,7 +125,7 @@
       transition: box-shadow var(--transition), border-color var(--transition);
       z-index: 2;
       cursor: grab;
-      touch-action: none; /* Важно для перетаскивания на мобильных */
+      touch-action: none;
       user-select: none;
     }
     .org-card:active { cursor: grabbing; }
@@ -137,6 +137,7 @@
       box-shadow: var(--shadow-lg);
       border-color: var(--accent);
       z-index: 100;
+      cursor: grabbing;
     }
     
     /* Стили для текста в карточке */
@@ -216,10 +217,11 @@
 
   <div class="header">
     <div class="header-left">
-      <div class="title">Оргструктура</div>
+      <div class="title">Оргструктура <span style="font-size: 0.7em; color: var(--accent);">[Canvas v2]</span></div>
       <div class="subtitle">Схема компании</div>
     </div>
     <div class="controls">
+      <button class="btn secondary" id="resetViewBtn" title="Вернуть вид в центр">🎯 Центр</button>
       <button class="btn secondary" id="themeToggle">🌙 Тема</button>
       <button class="btn" id="addRootBtn">➕ Добавить верхушку</button>
     </div>
@@ -304,6 +306,12 @@
       localStorage.setItem('theme', next);
     });
 
+    // Центрирование
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      const container = document.getElementById('canvasContainer');
+      container.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    });
+
     // Загрузка данных
     function subscribeToData() {
       if (unsubscribe) unsubscribe();
@@ -348,7 +356,7 @@
         el.className = 'org-card';
         el.id = `node-${node.id}`;
         
-        // Если координат нет (например, старые данные или только что созданная), ставим по умолчанию
+        // Если координат нет (например, старые данные), ставим по умолчанию
         let x = node.x !== undefined ? node.x : 100;
         let y = node.y !== undefined ? node.y : 100;
         
@@ -419,10 +427,10 @@
       let initialY = node.y || 0;
 
       el.addEventListener('pointerdown', (e) => {
-        // Игнорируем клики по кнопкам
+        // Игнорируем клики по кнопкам действий
         if (e.target.closest('.org-actions')) return;
         
-        e.preventDefault(); // Предотвращаем скролл страницы при перетаскивании
+        e.preventDefault(); // Предотвращаем скролл и выделение текста
         isDragging = true;
         el.classList.add('dragging');
         el.setPointerCapture(e.pointerId);
@@ -511,8 +519,8 @@
     document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null));
     document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
     
-    // ✅ ИСПРАВЛЕНИЕ БАГА: Закрываем окно только по Mousedown (строго по фону).
-    // Если начать выделять текст в инпуте и увести мышь за пределы - окно не закроется.
+    // ✅ ИСПРАВЛЕНИЕ БАГА: Закрываем окно только при клике СТРОГО по фону.
+    // Используем mousedown вместо click, чтобы избежать проблем с выделением текста.
     modal.addEventListener('mousedown', (e) => {
       if (e.target === modal) modal.classList.remove('visible');
     });
