@@ -25,33 +25,53 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
+    /* ☀️ СВЕТЛАЯ ТЕМА (Тёплые, кремовые оттенки) */
     :root {
-      --bg-1: #f8fafc; --bg-2: #e2e8f0;
-      --surface: rgba(255,255,255,0.95); --surface-solid: #ffffff;
-      --surface-alt: #f1f5f9;
-      --border: #cbd5e1; --border-strong: #94a3b8;
-      --text: #0f172a; --text-muted: #475569;
-      --accent: #2563eb; --accent-soft: #eff6ff;
-      --line-color: #94a3b8;
-      --btn-1: #1e293b; --btn-2: #0f172a;
+      --bg-1: #FCFAF6; 
+      --bg-2: #F3EFE6;
+      --surface: rgba(255,255,255,0.95); 
+      --surface-solid: #ffffff;
+      --surface-alt: #F8F6F1;
+      --border: #E5DFD3; 
+      --border-strong: #D1C7B8;
+      --text: #2D2A26; 
+      --text-muted: #6B665E;
+      --accent: #C89B3C; /* Золото */
+      --accent-soft: #F9F3E6;
+      --line-color: #D1C7B8;
       
-      --shadow-sm: 0 1px 3px rgba(15,23,42,0.1);
-      --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.1);
-      --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.15);
+      --btn-primary: linear-gradient(180deg, #D4AF37, #B58E2A);
+      --btn-primary-hover: linear-gradient(180deg, #E5C158, #C89B3C);
+      
+      --shadow-sm: 0 1px 3px rgba(45,42,38,0.08);
+      --shadow-md: 0 4px 6px -1px rgba(45,42,38,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(45,42,38,0.15);
       
       --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --transition: 0.2s ease;
     }
 
+    /* 🌙 ТЁМНАЯ ТЕМА (Глубокий графит) */
     [data-theme="dark"] {
-      --bg-1: #0f172a; --bg-2: #1e293b;
-      --surface: rgba(30,41,59,0.95); --surface-solid: #1e293b;
-      --surface-alt: #334155;
-      --border: #334155; --border-strong: #475569;
-      --text: #f8fafc; --text-muted: #94a3b8;
-      --accent: #3b82f6; --accent-soft: rgba(59,130,246,0.15);
-      --line-color: #475569;
-      --btn-1: #334155; --btn-2: #1e293b;
+      --bg-1: #121417; 
+      --bg-2: #1A1D21;
+      --surface: rgba(30, 33, 38, 0.95); 
+      --surface-solid: #1E2126;
+      --surface-alt: #262A30;
+      --border: #33383F; 
+      --border-strong: #4B5563;
+      --text: #F3F4F6; 
+      --text-muted: #9CA3AF;
+      --accent: #E5BA5C; /* Светлое золото */
+      --accent-soft: rgba(229, 186, 92, 0.15);
+      --line-color: #4B5563;
+      
+      --btn-primary: linear-gradient(180deg, #D4AF37, #B58E2A);
+      --btn-primary-hover: linear-gradient(180deg, #E5C158, #C89B3C);
+      
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,7 +82,7 @@
       background: var(--bg-1);
     }
 
-    /* Шапка с логотипом */
+    /* Шапка */
     .header {
       position: absolute; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -72,15 +92,11 @@
       box-shadow: var(--shadow-sm);
     }
     
-    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-area { display: flex; align-items: center; gap: 14px; }
     
-    /* ✅ Стили для вашей картинки-логотипа */
     .logo-icon {
-      width: 48px; 
-      height: 48px;
-      object-fit: contain; /* Логотип не будет искажаться */
-      /* Если у логотипа нет прозрачного фона и вам нужны скругленные углы, раскомментируйте: */
-      /* border-radius: 8px; */ 
+      width: 48px; height: 48px;
+      object-fit: contain;
     }
     
     .title { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
@@ -90,27 +106,34 @@
     .btn {
       font-family: var(--font); font-size: 0.875rem; font-weight: 600;
       padding: 8px 16px; border-radius: 8px; cursor: pointer;
-      background: linear-gradient(180deg, var(--btn-1), var(--btn-2));
+      background: var(--btn-primary);
       color: #fff; border: 1px solid transparent;
       display: flex; align-items: center; gap: 6px;
       transition: all var(--transition);
     }
-    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
-    .btn.secondary { background: var(--surface-solid); color: var(--text); border-color: var(--border); }
-    .btn.secondary:hover { background: var(--surface-alt); }
+    .btn:hover { background: var(--btn-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    
+    .btn.secondary { 
+      background: var(--surface-solid); 
+      color: var(--text); 
+      border-color: var(--border); 
+    }
+    .btn.secondary:hover { 
+      background: var(--surface-alt); 
+      border-color: var(--border-strong);
+    }
 
     /* Бесконечный холст */
     .canvas-container {
       position: absolute; inset: 0;
-      top: 73px; /* Высота шапки чуть увеличилась из-за размера лого */
+      top: 73px;
       overflow: auto;
       background-image: radial-gradient(var(--border) 1px, transparent 1px);
       background-size: 20px 20px;
     }
     .canvas {
       position: relative;
-      width: 5000px; /* Огромный холст */
-      height: 5000px;
+      width: 5000px; height: 5000px;
       min-width: 100%; min-height: 100%;
     }
     #lines {
@@ -125,79 +148,52 @@
       background: var(--surface-solid);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-width: 200px;
-      max-width: 280px;
+      padding: 14px 16px;
+      display: flex; flex-direction: column; align-items: center;
+      min-width: 200px; max-width: 280px;
       box-shadow: var(--shadow-sm);
       transition: box-shadow var(--transition), border-color var(--transition);
-      z-index: 2;
-      cursor: grab;
-      touch-action: none;
-      user-select: none;
+      z-index: 2; cursor: grab; touch-action: none; user-select: none;
     }
     .org-card:active { cursor: grabbing; }
-    .org-card:hover {
-      border-color: var(--accent);
-      box-shadow: var(--shadow-md);
-    }
+    .org-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
     .org-card.dragging {
-      box-shadow: var(--shadow-lg);
-      border-color: var(--accent);
-      z-index: 100;
-      cursor: grabbing;
-      opacity: 0.9;
+      box-shadow: var(--shadow-lg); border-color: var(--accent);
+      z-index: 100; cursor: grabbing; opacity: 0.9;
     }
     
-    /* Стили для текста в карточке */
     .org-role { font-weight: 700; font-size: 0.875rem; color: var(--text); line-height: 1.2; margin-bottom: 4px; text-align: center; }
     .org-name { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; text-align: center; }
     .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
     
-    /* Блок "По каким вопросам" */
     .org-issues {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 8px;
-      text-align: center;
+      font-size: 0.75rem; color: var(--text-muted);
+      margin-top: 8px; text-align: center;
       border-top: 1px dashed var(--border);
-      padding-top: 8px;
-      width: 100%;
-      line-height: 1.3;
-      word-break: break-word;
+      padding-top: 8px; width: 100%; line-height: 1.3; word-break: break-word;
     }
-    .org-issues strong {
-      color: var(--text);
-      font-weight: 600;
-      display: block;
-      margin-bottom: 2px;
-    }
+    .org-issues strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 2px; }
 
     /* Кнопки действий на карточке */
     .org-actions {
-      position: absolute; top: -12px; right: -12px;
-      display: flex; gap: 4px;
-      opacity: 0; transition: opacity var(--transition);
+      position: absolute; top: -14px; right: -14px;
+      display: flex; gap: 4px; opacity: 0; transition: opacity var(--transition);
       background: var(--surface-solid);
       padding: 4px; border-radius: 8px;
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
-      z-index: 5;
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 5;
     }
     .org-card:hover .org-actions { opacity: 1; }
     .org-actions button {
-      width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px;
+      width: 26px; height: 26px; padding: 0; border: none; border-radius: 4px;
       background: transparent; color: var(--text-muted); cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       font-size: 0.75rem; transition: all var(--transition);
     }
     .org-actions button:hover { background: var(--surface-alt); color: var(--text); }
-    .org-actions button.add-btn:hover { color: #059669; background: #ecfdf5; }
+    .org-actions button.add-btn:hover { color: var(--accent); background: var(--accent-soft); }
     .org-actions button.delete-btn:hover { color: #dc2626; background: #fef2f2; }
 
-    /* Стили для пустого состояния */
+    /* Пустое состояние */
     .empty-state {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       text-align: center; color: var(--text-muted);
@@ -209,7 +205,7 @@
     /* Модальное окно */
     .modal-overlay {
       position: fixed; inset: 0; z-index: 1000;
-      background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
+      background: rgba(18,20,23,0.7); backdrop-filter: blur(4px);
       display: none; align-items: center; justify-content: center; padding: 20px;
     }
     .modal-overlay.visible { display: flex; }
@@ -217,8 +213,7 @@
       background: var(--surface-solid); border-radius: 16px;
       padding: 24px; width: 100%; max-width: 440px;
       box-shadow: var(--shadow-lg); border: 1px solid var(--border);
-      animation: modalIn 0.3s ease;
-      max-height: 90vh; overflow-y: auto;
+      animation: modalIn 0.3s ease; max-height: 90vh; overflow-y: auto;
     }
     @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; }
@@ -228,14 +223,11 @@
     
     input, textarea {
       font-family: var(--font); font-size: 0.9375rem; padding: 10px 12px;
-      color: var(--text); background: var(--surface);
+      color: var(--text); background: var(--bg-1);
       border: 1px solid var(--border-strong); border-radius: 8px; outline: none;
       transition: border-color var(--transition);
     }
-    textarea {
-      resize: vertical;
-      min-height: 70px;
-    }
+    textarea { resize: vertical; min-height: 70px; }
     input:focus, textarea:focus { border-color: var(--accent); }
     
     .modal-footer { display: flex; gap: 10px; margin-top: 24px; }
@@ -254,7 +246,7 @@
 
   <div class="header">
     <div class="logo-area">
-      <!-- ✅ Здесь мы заменили эмодзи на картинку. Убедитесь, что файл logo.png лежит в репозитории -->
+      <!-- Не забудьте, что файл logo.png должен лежать в репозитории -->
       <img src="logo.png" alt="Сеть отелей Номера" class="logo-icon" onerror="this.style.display='none'">
       <div>
         <div class="title">Сеть отелей Номера</div>
@@ -262,7 +254,7 @@
       </div>
     </div>
     <div class="controls">
-      <button class="btn secondary" id="resetViewBtn" title="Вернуть вид в центр">🎯 Центр</button>
+      <button class="btn secondary" id="resetViewBtn" title="Центрировать на карточках">🎯 Центр</button>
       <button class="btn secondary" id="themeToggle">🌙 Тема</button>
       <button class="btn" id="addRootBtn">➕ Добавить верхушку</button>
     </div>
@@ -272,7 +264,7 @@
   <div class="canvas-container" id="canvasContainer">
     <div class="canvas" id="canvas">
       <svg id="lines"></svg>
-      <!-- Карточки будут добавляться сюда -->
+      <!-- Карточки -->
     </div>
   </div>
 
@@ -351,10 +343,36 @@
       localStorage.setItem('theme', next);
     });
 
-    // Центрирование
+    // ✅ УМНОЕ ЦЕНТРИРОВАНИЕ: Находим все карточки и скроллим к ним
     document.getElementById('resetViewBtn').addEventListener('click', () => {
+      if (allNodes.length === 0) {
+        document.getElementById('canvasContainer').scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        return;
+      }
+
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+      allNodes.forEach(node => {
+        const el = document.getElementById(`node-${node.id}`);
+        if (el) {
+          const x = node.x || 0;
+          const y = node.y || 0;
+          minX = Math.min(minX, x);
+          minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x + el.offsetWidth);
+          maxY = Math.max(maxY, y + el.offsetHeight);
+        }
+      });
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      
       const container = document.getElementById('canvasContainer');
-      container.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      container.scrollTo({
+        top: centerY - container.clientHeight / 2,
+        left: centerX - container.clientWidth / 2,
+        behavior: 'smooth'
+      });
     });
 
     // Загрузка данных
@@ -370,7 +388,7 @@
       });
     }
 
-    // Отрисовка карточек и линий
+    // Отрисовка
     function renderTree() {
       const canvas = document.getElementById('canvas');
       const emptyState = document.querySelector('.empty-state');
@@ -432,7 +450,7 @@
       setTimeout(drawLines, 50);
     }
 
-    // Отрисовка SVG линий
+    // Отрисовка линий
     function drawLines() {
       const svg = document.getElementById('lines');
       svg.innerHTML = '';
@@ -482,7 +500,7 @@
       });
     }
 
-    // Логика перетаскивания
+    // Перетаскивание
     function makeDraggable(el, node) {
       let isDragging = false;
       let startX, startY;
@@ -491,7 +509,6 @@
 
       el.addEventListener('pointerdown', (e) => {
         if (e.target.closest('.org-actions')) return;
-        
         e.preventDefault();
         isDragging = true;
         el.classList.add('dragging');
@@ -505,7 +522,6 @@
 
       el.addEventListener('pointermove', (e) => {
         if (!isDragging) return;
-
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
 
@@ -549,7 +565,7 @@
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g, '<br>');
     }
 
-    // --- Модальное окно ---
+    // Модальное окно
     const modal = document.getElementById('modalOverlay');
     const form = document.getElementById('nodeForm');
 
@@ -582,7 +598,6 @@
       if (e.target === modal) modal.classList.remove('visible');
     });
 
-    // Сохранение
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('nodeId').value;
@@ -629,7 +644,6 @@
       }
     });
 
-    // Удаление (с каскадом)
     window.deleteNode = async (id) => {
       const node = allNodes.find(n => n.id === id);
       if (!node) return;
