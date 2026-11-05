@@ -73,14 +73,16 @@
     }
     
     .logo-area { display: flex; align-items: center; gap: 12px; }
+    
+    /* ✅ Стили для вашей картинки-логотипа */
     .logo-icon {
-      width: 40px; height: 40px;
-      background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-size: 1.25rem;
-      box-shadow: var(--shadow-sm);
+      width: 48px; 
+      height: 48px;
+      object-fit: contain; /* Логотип не будет искажаться */
+      /* Если у логотипа нет прозрачного фона и вам нужны скругленные углы, раскомментируйте: */
+      /* border-radius: 8px; */ 
     }
+    
     .title { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
     .subtitle { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;}
     
@@ -100,7 +102,7 @@
     /* Бесконечный холст */
     .canvas-container {
       position: absolute; inset: 0;
-      top: 65px; /* Высота шапки */
+      top: 73px; /* Высота шапки чуть увеличилась из-за размера лого */
       overflow: auto;
       background-image: radial-gradient(var(--border) 1px, transparent 1px);
       background-size: 20px 20px;
@@ -154,7 +156,7 @@
     .org-name { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; text-align: center; }
     .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
     
-    /* Новый блок "По каким вопросам" */
+    /* Блок "По каким вопросам" */
     .org-issues {
       font-size: 0.75rem;
       color: var(--text-muted);
@@ -252,7 +254,8 @@
 
   <div class="header">
     <div class="logo-area">
-      <div class="logo-icon">🏨</div>
+      <!-- ✅ Здесь мы заменили эмодзи на картинку. Убедитесь, что файл logo.png лежит в репозитории -->
+      <img src="logo.png" alt="Сеть отелей Номера" class="logo-icon" onerror="this.style.display='none'">
       <div>
         <div class="title">Сеть отелей Номера</div>
         <div class="subtitle">Оргструктура компании</div>
@@ -403,7 +406,6 @@
         el.style.left = `${x}px`;
         el.style.top = `${y}px`;
 
-        // Добавляем блок с вопросами, если он заполнен
         const issuesHtml = node.issues ? `
           <div class="org-issues">
             <strong>💬 Вопросы:</strong>
@@ -563,7 +565,7 @@
           document.getElementById('role').value = node.role || '';
           document.getElementById('name').value = node.name || '';
           document.getElementById('dept').value = node.dept || '';
-          document.getElementById('issues').value = node.issues || ''; // Заполняем поле
+          document.getElementById('issues').value = node.issues || '';
         }
       } else {
         document.getElementById('modalTitle').textContent = parentId ? 'Добавить подчиненного' : 'Добавить верхушку';
@@ -576,7 +578,6 @@
     document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null));
     document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
     
-    // Закрытие по клику строго по фону
     modal.addEventListener('mousedown', (e) => {
       if (e.target === modal) modal.classList.remove('visible');
     });
@@ -591,7 +592,7 @@
         role: document.getElementById('role').value.trim(),
         name: document.getElementById('name').value.trim(),
         dept: document.getElementById('dept').value.trim(),
-        issues: document.getElementById('issues').value.trim(), // Сохраняем поле
+        issues: document.getElementById('issues').value.trim(),
         parentId: parentId || null
       };
 
