@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Оргструктура компании</title>
+
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+      } catch (e) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
+
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-1: #f8fafc; --bg-2: #e2e8f0;
+      --surface: rgba(255,255,255,0.92); --surface-solid: #ffffff;
+      --surface-alt: #f1f5f9;
+      --border: #cbd5e1; --border-strong: #94a3b8;
+      --card-border: rgba(255,255,255,0.8);
+      --text: #0f172a; --text-muted: #475569;
+      --accent: #2563eb; --accent-soft: #eff6ff;
+      --line-color: #94a3b8;
+      --btn-1: #1e293b; --btn-2: #0f172a;
+      
+      --shadow-sm: 0 1px 3px rgba(15,23,42,0.1);
+      --shadow-md: 0 4px 6px -1px rgba(15,23,42,0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(15,23,42,0.1);
+      
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --transition: 0.2s ease;
+    }
+
+    [data-theme="dark"] {
+      --bg-1: #0f172a; --bg-2: #1e293b;
+      --surface: rgba(30,41,59,0.85); --surface-solid: #1e293b;
+      --surface-alt: #334155;
+      --border: #334155; --border-strong: #475569;
+      --card-border: rgba(255,255,255,0.1);
+      --text: #f8fafc; --text-muted: #94a3b8;
+      --accent: #3b82f6; --accent-soft: rgba(59,130,246,0.15);
+      --line-color: #475569;
+      --btn-1: #334155; --btn-2: #1e293b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: var(--font); color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.5; min-height: 100vh;
+      background: linear-gradient(135deg, var(--bg-1) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      overflow: auto; /* Позволяем скроллить большие деревья */
+    }
+
+    /* Шапка */
+    .header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--surface); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+    .header-left { display: flex; flex-direction: column; }
+    .title { font-size: 1.25rem; font-weight: 700; color: var(--text); }
+    .subtitle { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    
+    .controls { display: flex; gap: 12px; }
+    .btn {
+      font-family: var(--font); font-size: 0.875rem; font-weight: 600;
+      padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      background: linear-gradient(180deg, var(--btn-1), var(--btn-2));
+      color: #fff; border: 1px solid transparent;
+      display: flex; align-items: center; gap: 6px;
+      transition: all var(--transition);
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn.secondary { background: var(--surface-solid); color: var(--text); border-color: var(--border); }
+    .btn.secondary:hover { background: var(--surface-alt); }
+
+    /* Контейнер для дерева */
+    .tree-container {
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      min-width: max-content; /* Чтобы дерево не сжималось */
+    }
+
+    /* --- CSS ДЛЯ ДЕРЕВА (классический подход) --- */
+    .tree ul {
+      padding-top: 20px; position: relative;
+      transition: all 0.5s;
+      display: flex; justify-content: center;
+    }
+    .tree li {
+      float: left; text-align: center;
+      list-style-type: none;
+      position: relative;
+      padding: 20px 5px 0 5px;
+      transition: all 0.5s;
+    }
+    /* Рисуем линии */
+    .tree li::before, .tree li::after {
+      content: ''; position: absolute; top: 0; right: 50%;
+      border-top: 2px solid var(--line-color);
+      width: 50%; height: 20px;
+    }
+    .tree li::after {
+      right: auto; left: 50%;
+      border-left: 2px solid var(--line-color);
+    }
+    /* Убираем линии у единственного ребенка */
+    .tree li:only-child::after, .tree li:only-child::before { display: none; }
+    .tree li:only-child { padding-top: 0; }
+    /* Убираем левую линию у первого и правую у последнего */
+    .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+    /* Добавляем вертикальную линию вниз для последнего */
+    .tree li:last-child::before {
+      border-right: 2px solid var(--line-color);
+      border-radius: 0 5px 0 0;
+    }
+    .tree li:first-child::after {
+      border-radius: 5px 0 0 0;
+    }
+    /* Вертикальная линия от родителя */
+    .tree ul ul::before {
+      content: ''; position: absolute; top: 0; left: 50%;
+      border-left: 2px solid var(--line-color);
+      width: 0; height: 20px;
+    }
+
+    /* Карточка должности */
+    .org-card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 180px;
+      max-width: 240px;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition);
+      position: relative;
+      text-decoration: none;
+      color: inherit;
+      cursor: default;
+    }
+    .org-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    
+    /* Стили для текста в карточке */
+    .org-role { font-weight: 700; font-size: 0.875rem; color: var(--text); line-height: 1.2; margin-bottom: 4px; }
+    .org-name { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; }
+    .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+
+    /* Кнопки действий на карточке */
+    .org-actions {
+      position: absolute; top: -12px; right: -12px;
+      display: flex; gap: 4px;
+      opacity: 0; transition: opacity var(--transition);
+      background: var(--surface-solid);
+      padding: 4px; border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      z-index: 5;
+    }
+    .org-card:hover .org-actions { opacity: 1; }
+    .org-actions button {
+      width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px;
+      background: transparent; color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; transition: all var(--transition);
+    }
+    .org-actions button:hover { background: var(--surface-alt); color: var(--text); }
+    .org-actions button.add-btn:hover { color: #059669; background: #ecfdf5; }
+    .org-actions button.delete-btn:hover { color: #dc2626; background: #fef2f2; }
+
+    /* Стили для пустого состояния */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--text-muted);
+      display: flex; flex-direction: column; align-items: center; gap: 16px;
+    }
+    .empty-state h2 { color: var(--text); font-size: 1.5rem; }
+
+    /* Модальное окно */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(15,23,42,0.6); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal {
+      background: var(--surface-solid); border-radius: 16px;
+      padding: 24px; width: 100%; max-width: 400px;
+      box-shadow: var(--shadow-lg); border: 1px solid var(--border);
+      animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; }
+    
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    input {
+      font-family: var(--font); font-size: 0.9375rem; padding: 10px 12px;
+      color: var(--text); background: var(--surface);
+      border: 1px solid var(--border-strong); border-radius: 8px; outline: none;
+      transition: border-color var(--transition);
+    }
+    input:focus { border-color: var(--accent); }
+    
+    .modal-footer { display: flex; gap: 10px; margin-top: 24px; }
+    .modal-footer button { flex: 1; justify-content: center; padding: 12px; }
+
+    /* Адаптив */
+    @media (max-width: 720px) {
+      .header { padding: 12px 16px; flex-direction: column; align-items: flex-start; gap: 12px; }
+      .controls { width: 100%; justify-content: space-between; }
+      .tree-container { padding: 20px 10px; }
+      .tree li { padding: 20px 2px 0 2px; }
+      .org-card { min-width: 140px; padding: 10px; }
+      .org-role { font-size: 0.75rem; }
+      .org-name { font-size: 0.6875rem; }
+      .org-dept { font-size: 0.625rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-left">
+      <div class="title">Оргструктура</div>
+      <div class="subtitle">Иерархия должностей</div>
+    </div>
+    <div class="controls">
+      <button class="btn secondary" id="themeToggle">🌙 Тема</button>
+      <button class="btn" id="addRootBtn">➕ Добавить верхушку</button>
+    </div>
+  </div>
+
+  <div class="tree-container" id="treeContainer">
+    <!-- Дерево будет отрисовано здесь -->
+  </div>
+
+  <!-- Модальное окно -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Добавить должность</div>
+      <form id="nodeForm">
+        <input type="hidden" id="nodeId">
+        <input type="hidden" id="parentId">
+        
+        <div class="field">
+          <label>Название должности *</label>
+          <input type="text" id="role" placeholder="Например: Генеральный директор" required>
+        </div>
+        <div class="field">
+          <label>ФИО сотрудника</label>
+          <input type="text" id="name" placeholder="Например: Иванов Иван">
+        </div>
+        <div class="field">
+          <label>Отдел / Департамент</label>
+          <input type="text" id="dept" placeholder="Например: Администрация">
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn secondary" id="cancelBtn">Отмена</button>
+          <button type="submit" class="btn" id="submitBtn">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
+    import {
+      initializeFirestore,
+      persistentLocalCache,
+      persistentMultipleTabManager,
+      collection,
+      doc,
+      addDoc,
+      updateDoc,
+      deleteDoc,
+      query,
+      onSnapshot,
+      serverTimestamp,
+      getDocs
+    } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDdm0kaIesCu4CBennxPVoPhXwyAyAiwIg",
+      authDomain: "chek-listdb.firebaseapp.com",
+      projectId: "chek-listdb",
+      storageBucket: "chek-listdb.firebasestorage.app",
+      messagingSenderId: "966580226421",
+      appId: "1:966580226421:web:af59fd2a1ad92fd4b8eb3c"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+    });
+
+    const COLLECTION = 'org_structure';
+    let allNodes = [];
+    let unsubscribe = null;
+
+    // Тема
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+    });
+
+    // Загрузка данных
+    function subscribeToData() {
+      if (unsubscribe) unsubscribe();
+      const q = query(collection(db, COLLECTION));
+      unsubscribe = onSnapshot(q, snapshot => {
+        allNodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderTree();
+      }, err => {
+        console.error('Ошибка загрузки:', err);
+        alert('Не удалось загрузить данные.');
+      });
+    }
+
+    // Отрисовка дерева
+    function renderTree() {
+      const container = document.getElementById('treeContainer');
+      
+      // Если нет данных — показываем пустое состояние
+      if (allNodes.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <h2>Структура пуста</h2>
+            <p>Нажмите «Добавить верхушку», чтобы создать первую должность (например, Генерального директора).</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Строим иерархию
+      const rootNodes = allNodes.filter(n => !n.parentId);
+      
+      // Функция рекурсивного построения HTML
+      function buildHTML(node) {
+        const children = allNodes.filter(n => n.parentId === node.id);
+        
+        let html = `
+          <li>
+            <div class="org-card">
+              <div class="org-actions">
+                <button class="add-btn" onclick="openModal(null, '${node.id}')" title="Добавить подчиненного">➕</button>
+                <button onclick="openModal('${node.id}')" title="Редактировать">✏️</button>
+                <button class="delete-btn" onclick="deleteNode('${node.id}')" title="Удалить">🗑️</button>
+              </div>
+              <div class="org-role">${esc(node.role)}</div>
+              ${node.name ? `<div class="org-name">${esc(node.name)}</div>` : ''}
+              ${node.dept ? `<div class="org-dept">${esc(node.dept)}</div>` : ''}
+            </div>
+        `;
+
+        if (children.length > 0) {
+          html += `<ul>`;
+          children.forEach(child => {
+            html += buildHTML(child);
+          });
+          html += `</ul>`;
+        }
+
+        html += `</li>`;
+        return html;
+      }
+
+      let finalHTML = `<div class="tree"><ul>`;
+      rootNodes.forEach(root => {
+        finalHTML += buildHTML(root);
+      });
+      finalHTML += `</ul></div>`;
+
+      container.innerHTML = finalHTML;
+    }
+
+    // Вспомогательная функция для экранирования HTML
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // --- Модальное окно и управление ---
+    const modal = document.getElementById('modalOverlay');
+    const form = document.getElementById('nodeForm');
+
+    window.openModal = (editId = null, parentId = null) => {
+      form.reset();
+      document.getElementById('nodeId').value = editId || '';
+      document.getElementById('parentId').value = parentId || '';
+
+      if (editId) {
+        const node = allNodes.find(n => n.id === editId);
+        if (node) {
+          document.getElementById('modalTitle').textContent = 'Редактировать должность';
+          document.getElementById('role').value = node.role || '';
+          document.getElementById('name').value = node.name || '';
+          document.getElementById('dept').value = node.dept || '';
+        }
+      } else {
+        document.getElementById('modalTitle').textContent = parentId ? 'Добавить подчиненного' : 'Добавить верхушку';
+      }
+      
+      modal.classList.add('visible');
+      document.getElementById('role').focus();
+    };
+
+    document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null));
+    document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
+    
+    // Закрытие по клику вне окна
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) modal.classList.remove('visible');
+    });
+
+    // Сохранение (добавление или редактирование)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const editId = document.getElementById('nodeId').value;
+      const parentId = document.getElementById('parentId').value;
+      
+      const data = {
+        role: document.getElementById('role').value.trim(),
+        name: document.getElementById('name').value.trim(),
+        dept: document.getElementById('dept').value.trim(),
+        parentId: parentId || null
+      };
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Сохранение...';
+
+      try {
+        if (editId) {
+          await updateDoc(doc(db, COLLECTION, editId), data);
+        } else {
+          data.createdAt = serverTimestamp();
+          await addDoc(collection(db, COLLECTION), data);
+        }
+        modal.classList.remove('visible');
+      } catch (err) {
+        console.error('Ошибка сохранения:', err);
+        alert('Ошибка: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Сохранить';
+      }
+    });
+
+    // Удаление (с каскадным удалением подчиненных)
+    window.deleteNode = async (id) => {
+      const node = allNodes.find(n => n.id === id);
+      if (!node) return;
+
+      // Функция для поиска всех потомков
+      const getDescendants = (parentId) => {
+        let descendants = [];
+        const children = allNodes.filter(n => n.parentId === parentId);
+        children.forEach(child => {
+          descendants.push(child.id);
+          descendants = descendants.concat(getDescendants(child.id));
+        });
+        return descendants;
+      };
+
+      const descendants = getDescendants(id);
+      const count = descendants.length;
+
+      const confirmText = count > 0 
+        ? `Удалить должность "${node.role}" и всех её подчиненных (${count} чел.)? Это действие нельзя отменить.`
+        : `Удалить должность "${node.role}"?`;
+
+      if (!confirm(confirmText)) return;
+
+      try {
+        // Удаляем саму ноду и всех потомков
+        const idsToDelete = [id, ...descendants];
+        const promises = idsToDelete.map(nodeId => deleteDoc(doc(db, COLLECTION, nodeId)));
+        await Promise.all(promises);
+      } catch (err) {
+        console.error('Ошибка удаления:', err);
+        alert('Не удалось удалить: ' + err.message);
+      }
+    };
+
+    // Старт
+    subscribeToData();
+  </script>
+</body>
+</html>
