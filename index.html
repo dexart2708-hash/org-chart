@@ -111,7 +111,7 @@
     .canvas { position: relative; width: 5000px; height: 5000px; min-width: 100%; min-height: 100%; transform-origin: 0 0; transition: transform 0.3s ease; }
     #lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 
-    /* ✅ КАРТОЧКИ: плавный переход для координат, анимация только для новых */
+    /* ✅ КАРТОЧКИ: плавный переход для координат, отключается при перетаскивании */
     .org-card {
       position: absolute; background: var(--surface-solid); border: 1px solid var(--border);
       border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; align-items: center;
@@ -131,7 +131,7 @@
     
     /* ✅ ПРИ ПЕРЕТАСКИВАНИИ ОТКЛЮЧАЕМ ПЛАВНОСТЬ, ЧТОБЫ НЕ ОТСТАВАЛО ОТ МЫШИ */
     .org-card.dragging { 
-      transition: none; 
+      transition: none !important; 
       box-shadow: var(--shadow-lg); 
       border-color: var(--accent); 
       z-index: 100; 
@@ -430,7 +430,7 @@
       });
     }
 
-    // ✅ УМНАЯ ОТРИСОВКА (Diffing без мерцания)
+    // ✅ УМНАЯ ОТРИСОВКА
     function renderTree() {
       const canvas = document.getElementById('canvas');
       const emptyState = document.querySelector('.empty-state');
@@ -467,7 +467,7 @@
 
       const nodeIdsInDB = new Set(allNodes.map(n => n.id));
 
-      // 1. Удаляем узлы, которых больше нет в базе (или они скрыты)
+      // 1. Удаляем узлы, которых больше нет в базе
       document.querySelectorAll('.org-card').forEach(el => {
         const id = el.id.replace('node-', '');
         if (!nodeIdsInDB.has(id)) {
@@ -480,7 +480,6 @@
         let el = document.getElementById(`node-${node.id}`);
         const isHidden = hiddenIds.has(node.id);
 
-        // Формируем HTML контента
         const hasChildren = allNodes.some(n => n.parentId === node.id);
         const collapseBtnHtml = hasChildren ? `<button class="collapse-btn" onclick="toggleCollapse('${node.id}', ${!node.collapsed})">${node.collapsed ? '▼' : '▲'}</button>` : '';
         const issuesHtml = (!node.isDepartment && node.issues) ? `<div class="org-issues"><strong>💬 Вопросы:</strong>${esc(node.issues)}</div>` : '';
@@ -500,28 +499,24 @@
         `;
 
         if (el) {
-          // Если элемент уже есть в DOM
           if (isHidden) {
             el.style.display = 'none';
           } else {
             el.style.display = 'flex';
             
-            // Обновляем координаты, ТОЛЬКО если не тащим прямо сейчас
+            // ✅ ОБНОВЛЯЕМ КООРДИНАТЫ, ТОЛЬКО ЕСЛИ НЕ ТАЩИМ ПРЯМО СЕЙЧАС
             if (!el.classList.contains('dragging')) {
               el.style.left = `${node.x || 100}px`;
               el.style.top = `${node.y || 100}px`;
             }
 
-            // Обновляем содержимое, ТОЛЬКО если оно изменилось (чтобы не сбивать ховер)
             if (el.innerHTML.trim() !== newHtml.trim()) {
               el.innerHTML = newHtml;
             }
 
-            // Обновляем классы (на случай смены типа или вакансии)
             el.className = `org-card ${node.isDepartment ? 'is-department' : ''} ${node.isVacancy ? 'is-vacancy' : ''} ${el.classList.contains('dragging') ? 'dragging' : ''} ${el.classList.contains('search-match') ? 'search-match' : ''}`;
           }
         } else {
-          // Если элемента нет — создаем новый
           if (!isHidden) {
             el = document.createElement('div');
             el.id = `node-${node.id}`;
@@ -533,7 +528,6 @@
             makeDraggable(el, node);
             canvas.appendChild(el);
 
-            // Убираем класс анимации через 300мс
             setTimeout(() => el.classList.remove('new-node'), 300);
           }
         }
@@ -595,29 +589,46 @@
       });
     }
 
-    // Drag & Drop
+    // ✅ ИСПРАВЛЕННЫЙ DRAG & DROP (Берем координаты из DOM)
     function makeDraggable(el, node) {
       let isDragging = false;
-      let startX, startY, initialX = node.x || 0, initialY = node.y || 0;
+      let startX, startY, initialX = 0, initialY = 0;
 
       el.addEventListener('pointerdown', (e) => {
         if (e.target.closest('.org-actions') || e.target.closest('.collapse-btn')) return;
         e.preventDefault();
+        
         isDragging = true;
         el.classList.add('dragging');
         el.setPointerCapture(e.pointerId);
-        startX = e.clientX; startY = e.clientY;
+        
+        // Берем актуальные координаты прямо из стилей DOM
+        initialX = parseFloat(el.style.left) || 0;
+        initialY = parseFloat(el.style.top) || 0;
+        
+        // Синхронизируем объект, чтобы updateDoc отправил правильные данные
+        node.x = initialX;
+        node.y = initialY;
+        
+        startX = e.clientX; 
+        startY = e.clientY;
       });
 
       el.addEventListener('pointermove', (e) => {
         if (!isDragging) return;
+        
+        // Вычисляем смещение с учетом зума
         const dx = (e.clientX - startX) / zoom;
         const dy = (e.clientY - startY) / zoom;
         
         const newX = initialX + dx;
         const newY = initialY + dy;
-        el.style.left = `${newX}px`; el.style.top = `${newY}px`;
-        node.x = newX; node.y = newY;
+        
+        el.style.left = `${newX}px`; 
+        el.style.top = `${newY}px`;
+        node.x = newX; 
+        node.y = newY;
+        
         drawLines();
       });
 
@@ -627,6 +638,13 @@
         el.classList.remove('dragging');
         el.releasePointerCapture(e.pointerId);
         try { await updateDoc(doc(db, COLLECTION, node.id), { x: node.x, y: node.y }); } catch (err) {}
+      });
+      
+      el.addEventListener('pointercancel', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        el.classList.remove('dragging');
+        el.releasePointerCapture(e.pointerId);
       });
     }
 
