@@ -21,54 +21,42 @@
   <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Библиотеки для экспорта -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <style>
-    /* ☀️ СВЕТЛАЯ ТЕМА (Тёплые, кремовые оттенки) */
+    /* ☀️ СВЕТЛАЯ ТЕМА */
     :root {
-      --bg-1: #FCFAF6; 
-      --bg-2: #F3EFE6;
-      --surface: rgba(255,255,255,0.95); 
-      --surface-solid: #ffffff;
+      --bg-1: #FCFAF6; --bg-2: #F3EFE6;
+      --surface: rgba(255,255,255,0.95); --surface-solid: #ffffff;
       --surface-alt: #F8F6F1;
-      --border: #E5DFD3; 
-      --border-strong: #D1C7B8;
-      --text: #2D2A26; 
-      --text-muted: #6B665E;
-      --accent: #C89B3C; /* Золото */
-      --accent-soft: #F9F3E6;
+      --border: #E5DFD3; --border-strong: #D1C7B8;
+      --text: #2D2A26; --text-muted: #6B665E;
+      --accent: #C89B3C; --accent-soft: #F9F3E6;
       --line-color: #D1C7B8;
-      
       --btn-primary: linear-gradient(180deg, #D4AF37, #B58E2A);
       --btn-primary-hover: linear-gradient(180deg, #E5C158, #C89B3C);
-      
       --shadow-sm: 0 1px 3px rgba(45,42,38,0.08);
       --shadow-md: 0 4px 6px -1px rgba(45,42,38,0.1);
       --shadow-lg: 0 10px 15px -3px rgba(45,42,38,0.15);
-      
       --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --transition: 0.2s ease;
     }
 
-    /* 🌙 ТЁМНАЯ ТЕМА (Глубокий графит) */
+    /* 🌙 ТЁМНАЯ ТЕМА */
     [data-theme="dark"] {
-      --bg-1: #121417; 
-      --bg-2: #1A1D21;
-      --surface: rgba(30, 33, 38, 0.95); 
-      --surface-solid: #1E2126;
+      --bg-1: #121417; --bg-2: #1A1D21;
+      --surface: rgba(30, 33, 38, 0.95); --surface-solid: #1E2126;
       --surface-alt: #262A30;
-      --border: #33383F; 
-      --border-strong: #4B5563;
-      --text: #F3F4F6; 
-      --text-muted: #9CA3AF;
-      --accent: #E5BA5C; /* Светлое золото */
-      --accent-soft: rgba(229, 186, 92, 0.15);
+      --border: #33383F; --border-strong: #4B5563;
+      --text: #F3F4F6; --text-muted: #9CA3AF;
+      --accent: #E5BA5C; --accent-soft: rgba(229, 186, 92, 0.15);
       --line-color: #4B5563;
-      
       --btn-primary: linear-gradient(180deg, #D4AF37, #B58E2A);
       --btn-primary-hover: linear-gradient(180deg, #E5C158, #C89B3C);
-      
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
       --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4);
       --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.5);
@@ -77,8 +65,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       font-family: var(--font); color: var(--text);
-      -webkit-font-smoothing: antialiased;
-      line-height: 1.5; height: 100vh; overflow: hidden;
+      -webkit-font-smoothing: antialiased; line-height: 1.5; height: 100vh; overflow: hidden;
       background: var(--bg-1);
     }
 
@@ -86,179 +73,126 @@
     .header {
       position: absolute; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 12px 24px;
-      background: var(--surface); backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      box-shadow: var(--shadow-sm);
+      padding: 12px 24px; background: var(--surface); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      flex-wrap: wrap; gap: 10px;
     }
     
     .logo-area { display: flex; align-items: center; gap: 14px; }
-    .logo-icon { width: 48px; height: 48px; object-fit: contain; }
+    .logo-icon { width: 40px; height: 40px; object-fit: contain; }
+    .title { font-size: 1.1rem; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
     
-    .title { font-size: 1.25rem; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -0.02em; }
-    .subtitle { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;}
-    
-    .controls { display: flex; gap: 12px; }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .btn {
-      font-family: var(--font); font-size: 0.875rem; font-weight: 600;
-      padding: 8px 16px; border-radius: 8px; cursor: pointer;
-      background: var(--btn-primary);
-      color: #fff; border: 1px solid transparent;
-      display: flex; align-items: center; gap: 6px;
-      transition: all var(--transition);
+      font-family: var(--font); font-size: 0.8125rem; font-weight: 600;
+      padding: 6px 12px; border-radius: 6px; cursor: pointer;
+      background: var(--btn-primary); color: #fff; border: 1px solid transparent;
+      display: flex; align-items: center; gap: 4px; transition: all var(--transition);
     }
     .btn:hover { background: var(--btn-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn.secondary { background: var(--surface-solid); color: var(--text); border-color: var(--border); }
+    .btn.secondary:hover { background: var(--surface-alt); border-color: var(--border-strong); }
     
-    .btn.secondary { 
-      background: var(--surface-solid); 
-      color: var(--text); 
-      border-color: var(--border); 
+    .search-box {
+      position: relative; display: flex; align-items: center; margin-right: 10px;
     }
-    .btn.secondary:hover { 
-      background: var(--surface-alt); 
-      border-color: var(--border-strong);
+    .search-box input {
+      padding: 6px 12px 6px 30px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--bg-1); color: var(--text); font-size: 0.8125rem; outline: none;
+      width: 200px; transition: border-color var(--transition);
     }
+    .search-box input:focus { border-color: var(--accent); }
+    .search-box svg { position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted); pointer-events: none; }
 
     /* Бесконечный холст */
-    .canvas-container {
-      position: absolute; inset: 0;
-      top: 73px;
-      overflow: auto;
-      background-image: radial-gradient(var(--border) 1px, transparent 1px);
-      background-size: 20px 20px;
-    }
-    .canvas {
-      position: relative;
-      width: 5000px; height: 5000px;
-      min-width: 100%; min-height: 100%;
-    }
-    #lines {
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      pointer-events: none; z-index: 1;
-    }
+    .canvas-container { position: absolute; inset: 0; top: 65px; overflow: auto; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 20px 20px; }
+    .canvas { position: relative; width: 5000px; height: 5000px; min-width: 100%; min-height: 100%; transform-origin: 0 0; transition: transform 0.2s ease; }
+    #lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 
     /* Карточка */
     .org-card {
-      position: absolute;
-      background: var(--surface-solid);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      display: flex; flex-direction: column; align-items: center;
-      min-width: 200px; max-width: 280px;
-      box-shadow: var(--shadow-sm);
+      position: absolute; background: var(--surface-solid); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; align-items: center;
+      min-width: 180px; max-width: 240px; box-shadow: var(--shadow-sm);
       transition: box-shadow var(--transition), border-color var(--transition);
       z-index: 2; cursor: grab; touch-action: none; user-select: none;
     }
     .org-card:active { cursor: grabbing; }
     .org-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
-    .org-card.dragging {
-      box-shadow: var(--shadow-lg); border-color: var(--accent);
-      z-index: 100; cursor: grabbing; opacity: 0.9;
-    }
+    .org-card.dragging { box-shadow: var(--shadow-lg); border-color: var(--accent); z-index: 100; cursor: grabbing; opacity: 0.9; }
+    .org-card.search-match { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.3); }
 
-    /* Стили для отделов (выделяем их) */
-    .org-card.is-department {
-      background: var(--accent-soft);
-      border: 2px solid var(--accent);
-    }
+    /* Стили для отделов */
+    .org-card.is-department { background: var(--accent-soft); border: 2px solid var(--accent); }
+    
+    /* Стиль для вакансии */
+    .org-card.is-vacancy { border: 2px dashed #f59e0b; background: rgba(245, 158, 11, 0.05); opacity: 0.85; }
+    .vacancy-badge { position: absolute; top: -10px; left: -10px; background: #f59e0b; color: #fff; font-size: 0.625rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: uppercase; }
 
-    /* ✅ ОДИНАКОВЫЙ ШРИФТ ДЛЯ ДОЛЖНОСТИ И ИМЕНИ */
-    .org-role, .org-name { 
-      font-size: 0.9375rem;
-      font-weight: 700;
-      text-align: center; 
-      line-height: 1.3;
-      margin-bottom: 4px;
-      word-break: break-word;
-    }
+    .org-role, .org-name { font-size: 0.875rem; font-weight: 700; text-align: center; line-height: 1.3; margin-bottom: 4px; word-break: break-word; }
     .org-role { color: var(--text); }
     .org-name { color: var(--text-muted); }
-    
-    .org-dept { font-size: 0.6875rem; font-weight: 600; color: var(--accent); background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+    .org-dept { font-size: 0.625rem; font-weight: 600; color: var(--accent); background: rgba(0,0,0,0.05); padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
     [data-theme="dark"] .org-dept { background: rgba(255,255,255,0.1); }
-    
-    .org-issues {
-      font-size: 0.75rem; color: var(--text-muted);
-      margin-top: 8px; text-align: center;
-      border-top: 1px dashed var(--border);
-      padding-top: 8px; width: 100%; line-height: 1.3; word-break: break-word;
-    }
+    .org-issues { font-size: 0.6875rem; color: var(--text-muted); margin-top: 8px; text-align: center; border-top: 1px dashed var(--border); padding-top: 8px; width: 100%; line-height: 1.3; word-break: break-word; }
     .org-issues strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 2px; }
 
-    /* Кнопки действий на карточке */
+    /* Кнопки действий */
     .org-actions {
-      position: absolute; top: -14px; right: -14px;
-      display: flex; gap: 4px; opacity: 0; transition: opacity var(--transition);
-      background: var(--surface-solid);
-      padding: 4px; border-radius: 8px;
-      border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 5;
+      position: absolute; top: -12px; right: -12px; display: flex; gap: 4px;
+      opacity: 0; transition: opacity var(--transition); background: var(--surface-solid);
+      padding: 4px; border-radius: 6px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 5;
     }
     .org-card:hover .org-actions { opacity: 1; }
     .org-actions button {
-      width: 26px; height: 26px; padding: 0; border: none; border-radius: 4px;
+      width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px;
       background: transparent; color: var(--text-muted); cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all var(--transition);
     }
     .org-actions button:hover { background: var(--surface-alt); color: var(--text); }
     .org-actions button.add-btn:hover { color: var(--accent); background: var(--accent-soft); }
-    .org-actions button.link-btn:hover { color: #3b82f6; background: #eff6ff; }
     .org-actions button.delete-btn:hover { color: #dc2626; background: #fef2f2; }
 
-    /* Пустое состояние */
-    .empty-state {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      text-align: center; color: var(--text-muted);
-      display: flex; flex-direction: column; align-items: center; gap: 16px;
-      pointer-events: none; z-index: 0;
+    /* Кнопка свернуть/развернуть */
+    .collapse-btn {
+      position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
+      width: 20px; height: 20px; border-radius: 50%; background: var(--surface-solid);
+      border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+      cursor: pointer; z-index: 6; font-size: 0.75rem; color: var(--text-muted); transition: all var(--transition);
+      box-shadow: var(--shadow-sm); padding: 0;
     }
-    .empty-state h2 { color: var(--text); font-size: 1.5rem; }
+    .collapse-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* Модальное окно */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 1000;
-      background: rgba(18,20,23,0.7); backdrop-filter: blur(4px);
-      display: none; align-items: center; justify-content: center; padding: 20px;
-    }
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(18,20,23,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.visible { display: flex; }
-    .modal {
-      background: var(--surface-solid); border-radius: 16px;
-      padding: 24px; width: 100%; max-width: 440px;
-      box-shadow: var(--shadow-lg); border: 1px solid var(--border);
-      animation: modalIn 0.3s ease; max-height: 90vh; overflow-y: auto;
-    }
-    @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    .modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; }
-    
-    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
-    label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-    
-    input, textarea, select {
-      font-family: var(--font); font-size: 0.9375rem; padding: 10px 12px;
-      color: var(--text); background: var(--bg-1);
-      border: 1px solid var(--border-strong); border-radius: 8px; outline: none;
-      transition: border-color var(--transition);
-      width: 100%;
-    }
-    select {
-      appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B665E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px;
-    }
-    textarea { resize: vertical; min-height: 70px; }
+    .modal { background: var(--surface-solid); border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+    .modal-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 16px; }
+    .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+    label { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    input, textarea, select { font-family: var(--font); font-size: 0.875rem; padding: 8px 10px; color: var(--text); background: var(--bg-1); border: 1px solid var(--border-strong); border-radius: 6px; outline: none; width: 100%; transition: border-color var(--transition); }
     input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    textarea { resize: vertical; min-height: 60px; }
     
-    .modal-footer { display: flex; gap: 10px; margin-top: 24px; }
-    .modal-footer button { flex: 1; justify-content: center; padding: 12px; }
+    .checkbox-field { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer; }
+    .checkbox-field input { width: auto; }
+    .checkbox-field label { margin-bottom: 0; text-transform: none; font-size: 0.8125rem; color: var(--text); }
 
-    @media (max-width: 720px) {
-      .header { padding: 10px 16px; flex-direction: column; align-items: stretch; gap: 10px; }
-      .logo-area { justify-content: center; }
-      .controls { justify-content: space-between; }
-      .canvas-container { top: 110px; }
-      .org-card { min-width: 160px; padding: 10px; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-footer button { flex: 1; justify-content: center; padding: 10px; }
+
+    /* Тосты (Уведомления) */
+    .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+    .toast { background: var(--surface-solid); border: 1px solid var(--border); box-shadow: var(--shadow-lg); padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; gap: 16px; font-size: 0.875rem; font-weight: 500; animation: slideUp 0.3s ease; }
+    .toast button { background: var(--accent); color: #fff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.75rem; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Печать */
+    @media print {
+      .header, .org-actions, .collapse-btn, .toast-container { display: none !important; }
+      body { overflow: visible; height: auto; background: #fff; }
+      .canvas-container { position: static; overflow: visible; }
+      .canvas { transform: none !important; }
     }
   </style>
 </head>
@@ -266,16 +200,28 @@
 
   <div class="header">
     <div class="logo-area">
-      <img src="logo.png" alt="Сеть отелей Номера" class="logo-icon" onerror="this.style.display='none'">
+      <img src="logo.png" alt="Логотип" class="logo-icon" onerror="this.style.display='none'">
       <div>
         <div class="title">Сеть отелей Номера</div>
-        <div class="subtitle">Оргструктура компании</div>
+        <div class="subtitle" style="font-size: 0.65rem; color: var(--text-muted); font-weight: 600;">Оргструктура</div>
       </div>
     </div>
+    
     <div class="controls">
-      <button class="btn secondary" id="resetViewBtn" title="Центрировать на карточках">🎯 Центр</button>
-      <button class="btn secondary" id="themeToggle">🌙 Тема</button>
-      <button class="btn" id="addRootBtn">➕ Добавить Отдел</button>
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" id="searchInput" placeholder="Поиск сотрудника...">
+      </div>
+      
+      <button class="btn secondary" id="zoomOutBtn" title="Уменьшить">➖</button>
+      <span id="zoomLevel" style="font-size: 0.75rem; font-weight: 600; min-width: 35px; text-align: center;">100%</span>
+      <button class="btn secondary" id="zoomInBtn" title="Увеличить">➕</button>
+      
+      <button class="btn secondary" id="autoLayoutBtn" title="Автоматическая расстановка">🪄 Выровнять</button>
+      <button class="btn secondary" id="exportBtn" title="Скачать PDF">📄 PDF</button>
+      <button class="btn secondary" id="printBtn" title="Печать">🖨️</button>
+      <button class="btn secondary" id="themeToggle">🌙</button>
+      <button class="btn" id="addRootBtn">➕ Отдел</button>
     </div>
   </div>
 
@@ -285,20 +231,20 @@
     </div>
   </div>
 
+  <div class="toast-container" id="toastContainer"></div>
+
   <!-- Модальное окно -->
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
-      <div class="modal-title" id="modalTitle">Добавить Отдел</div>
+      <div class="modal-title" id="modalTitle">Добавить</div>
       <form id="nodeForm">
         <input type="hidden" id="nodeId">
         <input type="hidden" id="isDepartment">
         
-        <!-- Выбор родителя (Начальник / Отдел) -->
         <div class="field" id="fieldParent" style="display: none;">
           <label>Начальник / Входит в состав</label>
           <select id="parentId">
             <option value="">— Без начальника (Верхний уровень) —</option>
-            <!-- Опции добавятся в JS -->
           </select>
         </div>
 
@@ -315,6 +261,11 @@
         <div class="field field-employee" id="fieldDept">
           <label>Отдел / Департамент</label>
           <input type="text" id="dept" placeholder="Например: Администрация">
+        </div>
+
+        <div class="checkbox-field field-employee" id="fieldVacancy">
+          <input type="checkbox" id="isVacancy">
+          <label for="isVacancy">Это вакансия (место свободно)</label>
         </div>
         
         <div class="field field-employee" id="fieldIssues">
@@ -334,7 +285,7 @@
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
     import {
       initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-      collection, doc, addDoc, updateDoc, deleteDoc, query, onSnapshot, serverTimestamp, getDocs
+      collection, doc, addDoc, updateDoc, deleteDoc, query, onSnapshot, serverTimestamp, writeBatch
     } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -352,6 +303,8 @@
     const COLLECTION = 'org_structure';
     let allNodes = [];
     let unsubscribe = null;
+    let zoom = 1;
+    let deletedNodes = []; // Для Undo
 
     // Тема
     document.getElementById('themeToggle').addEventListener('click', () => {
@@ -361,78 +314,120 @@
       localStorage.setItem('theme', next);
     });
 
-    // Центрирование
-    document.getElementById('resetViewBtn').addEventListener('click', () => {
-      if (allNodes.length === 0) return;
-      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-      allNodes.forEach(node => {
-        const el = document.getElementById(`node-${node.id}`);
-        if (el) {
-          minX = Math.min(minX, node.x || 0); minY = Math.min(minY, node.y || 0);
-          maxX = Math.max(maxX, (node.x || 0) + el.offsetWidth); maxY = Math.max(maxY, (node.y || 0) + el.offsetHeight);
-        }
-      });
-      const container = document.getElementById('canvasContainer');
-      container.scrollTo({ top: (minY + maxY) / 2 - container.clientHeight / 2, left: (minX + maxX) / 2 - container.clientWidth / 2, behavior: 'smooth' });
+    // --- Масштабирование ---
+    function setZoom(newZoom) {
+      zoom = Math.max(0.3, Math.min(newZoom, 2)); // От 30% до 200%
+      document.getElementById('canvas').style.transform = `scale(${zoom})`;
+      document.getElementById('zoomLevel').textContent = Math.round(zoom * 100) + '%';
+    }
+    document.getElementById('zoomInBtn').addEventListener('click', () => setZoom(zoom + 0.1));
+    document.getElementById('zoomOutBtn').addEventListener('click', () => setZoom(zoom - 0.1));
+
+    // --- Поиск ---
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', (e) => {
+      const query = e.target.value.toLowerCase().trim();
+      document.querySelectorAll('.org-card').forEach(card => card.classList.remove('search-match'));
+      
+      if (!query) return;
+
+      const matchedNodes = allNodes.filter(n => 
+        (n.role && n.role.toLowerCase().includes(query)) || 
+        (n.name && n.name.toLowerCase().includes(query))
+      );
+
+      if (matchedNodes.length > 0) {
+        // Подсвечиваем все совпадения
+        matchedNodes.forEach(node => {
+          const el = document.getElementById(`node-${node.id}`);
+          if (el) el.classList.add('search-match');
+        });
+        // Центрируемся на первом
+        centerOnNode(matchedNodes[0].id);
+      }
     });
 
-    // Загрузка данных
+    function centerOnNode(id) {
+      const node = allNodes.find(n => n.id === id);
+      const el = document.getElementById(`node-${id}`);
+      if (!node || !el) return;
+
+      const container = document.getElementById('canvasContainer');
+      // Учитываем масштаб при скролле
+      const scrollX = (node.x || 0) * zoom;
+      const scrollY = (node.y || 0) * zoom;
+      
+      container.scrollTo({
+        top: scrollY - container.clientHeight / 2 + (el.offsetHeight * zoom / 2),
+        left: scrollX - container.clientWidth / 2 + (el.offsetWidth * zoom / 2),
+        behavior: 'smooth'
+      });
+    }
+
+    // --- Данные ---
     function subscribeToData() {
       if (unsubscribe) unsubscribe();
       const q = query(collection(db, COLLECTION));
       unsubscribe = onSnapshot(q, snapshot => {
         allNodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderTree();
-      }, err => {
-        console.error('Ошибка загрузки:', err);
-      });
+      }, err => console.error(err));
     }
 
-    // Отрисовка
+    // --- Отрисовка ---
     function renderTree() {
       const canvas = document.getElementById('canvas');
-      const emptyState = document.querySelector('.empty-state');
-
       Array.from(canvas.children).forEach(child => {
         if (child.tagName !== 'svg') child.remove();
       });
 
+      // Проверяем, есть ли вообще узлы
       if (allNodes.length === 0) {
-        if (!emptyState) {
-          const div = document.createElement('div');
-          div.className = 'empty-state';
-          div.innerHTML = `<h2>Схема пуста</h2><p>Нажмите «Добавить Отдел», чтобы создать структуру.</p>`;
-          canvas.appendChild(div);
-        }
         document.getElementById('lines').innerHTML = '';
         return;
       }
 
-      if (emptyState) emptyState.remove();
+      // Скрываем потомков свернутых веток
+      const hiddenIds = new Set();
+      allNodes.forEach(n => {
+        if (n.collapsed) {
+          const getDesc = (pid) => {
+            allNodes.filter(c => c.parentId === pid).forEach(c => {
+              hiddenIds.add(c.id);
+              getDesc(c.id);
+            });
+          };
+          getDesc(n.id);
+        }
+      });
 
       allNodes.forEach(node => {
-        const el = document.createElement('div');
-        el.className = `org-card ${node.isDepartment ? 'is-department' : ''}`;
-        el.id = `node-${node.id}`;
-        
-        el.style.left = `${node.x !== undefined ? node.x : 100}px`;
-        el.style.top = `${node.y !== undefined ? node.y : 100}px`;
+        if (hiddenIds.has(node.id)) return; // Пропускаем скрытые
 
-        const issuesHtml = (!node.isDepartment && node.issues) ? `
-          <div class="org-issues"><strong>💬 Вопросы:</strong>${esc(node.issues)}</div>
-        ` : '';
+        const el = document.createElement('div');
+        el.className = `org-card ${node.isDepartment ? 'is-department' : ''} ${node.isVacancy ? 'is-vacancy' : ''}`;
+        el.id = `node-${node.id}`;
+        el.style.left = `${node.x || 100}px`;
+        el.style.top = `${node.y || 100}px`;
+
+        // Проверяем, есть ли у него дети для кнопки "свернуть"
+        const hasChildren = allNodes.some(n => n.parentId === node.id);
+        const collapseBtnHtml = hasChildren ? `<button class="collapse-btn" onclick="toggleCollapse('${node.id}', ${!node.collapsed})">${node.collapsed ? '▼' : '▲'}</button>` : '';
+
+        const issuesHtml = (!node.isDepartment && node.issues) ? `<div class="org-issues"><strong>💬 Вопросы:</strong>${esc(node.issues)}</div>` : '';
 
         el.innerHTML = `
+          ${node.isVacancy ? '<div class="vacancy-badge">Вакансия</div>' : ''}
           <div class="org-actions">
-            <button class="add-btn" onclick="openModal(null, '${node.id}', false)" title="${node.isDepartment ? 'Добавить сотрудника' : 'Добавить подчиненного'}">➕</button>
-            <button class="link-btn" onclick="openModal('${node.id}')" title="Связать с другим отделом/сотрудником">🔗</button>
+            <button class="add-btn" onclick="openModal(null, '${node.id}', false)" title="Добавить подчиненного">➕</button>
             <button onclick="openModal('${node.id}')" title="Редактировать">✏️</button>
             <button class="delete-btn" onclick="deleteNode('${node.id}')" title="Удалить">🗑️</button>
           </div>
           <div class="org-role">${esc(node.role)}</div>
-          ${(!node.isDepartment && node.name) ? `<div class="org-name">${esc(node.name)}</div>` : ''}
+          ${(!node.isDepartment && node.name && !node.isVacancy) ? `<div class="org-name">${esc(node.name)}</div>` : ''}
           ${(!node.isDepartment && node.dept) ? `<div class="org-dept">${esc(node.dept)}</div>` : ''}
           ${issuesHtml}
+          ${collapseBtnHtml}
         `;
 
         makeDraggable(el, node);
@@ -442,14 +437,22 @@
       setTimeout(drawLines, 50);
     }
 
-    // Отрисовка линий
     function drawLines() {
       const svg = document.getElementById('lines');
       svg.innerHTML = '';
       const canvasRect = document.getElementById('canvas').getBoundingClientRect();
 
+      // Скрываем линии для скрытых узлов
+      const hiddenIds = new Set();
+      allNodes.forEach(n => {
+        if (n.collapsed) {
+          const getDesc = (pid) => allNodes.filter(c => c.parentId === pid).forEach(c => { hiddenIds.add(c.id); getDesc(c.id); });
+          getDesc(n.id);
+        }
+      });
+
       allNodes.forEach(node => {
-        if (!node.parentId) return;
+        if (!node.parentId || hiddenIds.has(node.id)) return;
         const parent = allNodes.find(n => n.id === node.parentId);
         if (!parent) return;
 
@@ -465,11 +468,8 @@
         const cx = cRect.left - canvasRect.left + cRect.width / 2;
         const cy = cRect.top - canvasRect.top + cRect.height / 2;
 
-        const diffX = Math.abs(px - cx);
-        const diffY = Math.abs(py - cy);
-
         let pathD = '';
-        if (diffY > diffX) {
+        if (Math.abs(py - cy) > Math.abs(px - cx)) {
           const startY = py < cy ? pRect.bottom - canvasRect.top : pRect.top - canvasRect.top;
           const endY = py < cy ? cRect.top - canvasRect.top : cRect.bottom - canvasRect.top;
           pathD = `M ${px} ${startY} V ${(startY + endY) / 2} H ${cx} V ${endY}`;
@@ -484,18 +484,16 @@
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke', 'var(--line-color)');
         path.setAttribute('stroke-width', '2');
-        path.setAttribute('stroke-linejoin', 'round');
         svg.appendChild(path);
       });
     }
 
-    // Перетаскивание
     function makeDraggable(el, node) {
       let isDragging = false;
       let startX, startY, initialX = node.x || 0, initialY = node.y || 0;
 
       el.addEventListener('pointerdown', (e) => {
-        if (e.target.closest('.org-actions')) return;
+        if (e.target.closest('.org-actions') || e.target.closest('.collapse-btn')) return;
         e.preventDefault();
         isDragging = true;
         el.classList.add('dragging');
@@ -505,8 +503,12 @@
 
       el.addEventListener('pointermove', (e) => {
         if (!isDragging) return;
-        const newX = initialX + (e.clientX - startX);
-        const newY = initialY + (e.clientY - startY);
+        // Делим на zoom, чтобы карточка двигалась ровно под курсором
+        const dx = (e.clientX - startX) / zoom;
+        const dy = (e.clientY - startY) / zoom;
+        
+        const newX = initialX + dx;
+        const newY = initialY + dy;
         el.style.left = `${newX}px`; el.style.top = `${newY}px`;
         node.x = newX; node.y = newY;
         drawLines();
@@ -517,9 +519,7 @@
         isDragging = false;
         el.classList.remove('dragging');
         el.releasePointerCapture(e.pointerId);
-        try {
-          await updateDoc(doc(db, COLLECTION, node.id), { x: node.x, y: node.y });
-        } catch (err) {}
+        try { await updateDoc(doc(db, COLLECTION, node.id), { x: node.x, y: node.y }); } catch (err) {}
       });
     }
 
@@ -527,25 +527,201 @@
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g, '<br>');
     }
 
+    // --- Свернуть ветку ---
+    window.toggleCollapse = async (id, isCollapsed) => {
+      await updateDoc(doc(db, COLLECTION, id), { collapsed: isCollapsed });
+    };
+
+    // --- Автоматическая расстановка (Auto-Layout) ---
+    document.getElementById('autoLayoutBtn').addEventListener('click', async () => {
+      if (allNodes.length === 0) return;
+      
+      const btn = document.getElementById('autoLayoutBtn');
+      btn.textContent = '⏳...';
+      btn.disabled = true;
+
+      try {
+        // 1. Вычисляем размеры карточек (рендерим временно, если надо, но проще взять из DOM)
+        const nodeSizes = {};
+        allNodes.forEach(n => {
+          const el = document.getElementById(`node-${n.id}`);
+          if (el) nodeSizes[n.id] = { w: el.offsetWidth, h: el.offsetHeight };
+          else nodeSizes[n.id] = { w: 200, h: 100 };
+        });
+
+        const H_GAP = 30; // Горизонтальный отступ
+        const V_GAP = 80; // Вертикальный отступ
+
+        // Рекурсивная функция для вычисления ширины поддерева
+        function calcWidth(nodeId) {
+          const children = allNodes.filter(n => n.parentId === nodeId);
+          if (children.length === 0) return nodeSizes[nodeId].w;
+          
+          let totalWidth = 0;
+          children.forEach((c, idx) => {
+            totalWidth += calcWidth(c.id);
+            if (idx < children.length - 1) totalWidth += H_GAP;
+          });
+          return Math.max(nodeSizes[nodeId].w, totalWidth);
+        }
+
+        // Рекурсивная функция расстановки
+        function setPositions(nodeId, startX, startY) {
+          const node = allNodes.find(n => n.id === nodeId);
+          const children = allNodes.filter(n => n.parentId === nodeId);
+          
+          const subtreeWidth = calcWidth(nodeId);
+          const nodeW = nodeSizes[nodeId].w;
+
+          // Ставим родителя по центру его поддерева
+          const parentX = startX + (subtreeWidth / 2) - (nodeW / 2);
+          const parentY = startY;
+          
+          node.x = parentX;
+          node.y = parentY;
+
+          // Расставляем детей
+          let currentX = startX;
+          children.forEach(child => {
+            const childWidth = calcWidth(child.id);
+            setPositions(child.id, currentX, startY + nodeSizes[nodeId].h + V_GAP);
+            currentX += childWidth + H_GAP;
+          });
+        }
+
+        // Находим корневые узлы (без parentId)
+        const roots = allNodes.filter(n => !n.parentId);
+        let currentX = 100;
+        
+        roots.forEach(root => {
+          setPositions(root.id, currentX, 100);
+          currentX += calcWidth(root.id) + H_GAP * 2;
+        });
+
+        // Сохраняем в базу (Batch)
+        const batch = writeBatch(db);
+        allNodes.forEach(node => {
+          batch.update(doc(db, COLLECTION, node.id), { x: node.x, y: node.y });
+        });
+        await batch.commit();
+
+      } catch (err) {
+        console.error(err);
+        alert('Ошибка при выравнивании');
+      } finally {
+        btn.textContent = '🪄 Выровнять';
+        btn.disabled = false;
+      }
+    });
+
+    // --- Корзина (Undo) ---
+    window.deleteNode = (id) => {
+      const node = allNodes.find(n => n.id === id);
+      if (!node) return;
+
+      const getDescendants = (pid) => {
+        let desc = [];
+        allNodes.filter(n => n.parentId === pid).forEach(c => {
+          desc.push(c);
+          desc = desc.concat(getDescendants(c.id));
+        });
+        return desc;
+      };
+
+      const descendants = getDescendants(id);
+      const nodesToDelete = [node, ...descendants];
+      
+      // Временно скрываем из DOM
+      nodesToDelete.forEach(n => {
+        const el = document.getElementById(`node-${n.id}`);
+        if (el) el.style.display = 'none';
+      });
+
+      // Добавляем в корзину
+      const trashId = Date.now();
+      deletedNodes.push({ id: trashId, nodes: nodesToDelete });
+
+      // Показываем Тосты
+      const toastContainer = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `
+        <span>Удалено: ${esc(node.role)} (${nodesToDelete.length} шт.)</span>
+        <button onclick="undoDelete(${trashId})">Отменить</button>
+      `;
+      toastContainer.appendChild(toast);
+
+      // Удаляем по-настоящему через 5 секунд
+      setTimeout(async () => {
+        const trashItem = deletedNodes.find(t => t.id === trashId);
+        if (trashItem) {
+          try {
+            const batch = writeBatch(db);
+            trashItem.nodes.forEach(n => batch.delete(doc(db, COLLECTION, n.id)));
+            await batch.commit();
+            
+            // Убираем тост
+            toast.remove();
+            // Убираем из массива
+            deletedNodes = deletedNodes.filter(t => t.id !== trashId);
+          } catch (err) { console.error(err); }
+        }
+      }, 5000);
+    };
+
+    window.undoDelete = (trashId) => {
+      const trashItem = deletedNodes.find(t => t.id === trashId);
+      if (!trashItem) return;
+      
+      // Возвращаем в DOM
+      trashItem.nodes.forEach(n => {
+        const el = document.getElementById(`node-${n.id}`);
+        if (el) el.style.display = 'flex';
+      });
+      
+      // Убираем из корзины
+      deletedNodes = deletedNodes.filter(t => t.id !== trashId);
+      
+      // Убираем тост
+      const toasts = document.querySelectorAll('.toast');
+      toasts.forEach(t => {
+        if (t.innerHTML.includes(trashId)) t.remove();
+      });
+    };
+
+    // --- Экспорт в PDF ---
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const btn = document.getElementById('exportBtn');
+      const oldText = btn.innerHTML;
+      btn.innerHTML = '⏳...';
+      
+      const element = document.getElementById('canvas');
+      const opt = {
+        margin: 10,
+        filename: 'org_structure.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a2', orientation: 'landscape' } // a2 для больших схем
+      };
+
+      // html2pdf вызовет html2canvas и сгенерирует pdf
+      html2pdf().set(opt).from(element).save().then(() => {
+        btn.innerHTML = oldText;
+      });
+    });
+
+    // --- Печать ---
+    document.getElementById('printBtn').addEventListener('click', () => {
+      window.print();
+    });
+
     // --- Модальное окно ---
     const modal = document.getElementById('modalOverlay');
     const form = document.getElementById('nodeForm');
     const parentSelect = document.getElementById('parentId');
 
-    // Рекурсивная функция поиска потомков (чтобы нельзя было зациклить)
-    const getDescendants = (parentId) => {
-      let descendants = [];
-      const children = allNodes.filter(n => n.parentId === parentId);
-      children.forEach(child => {
-        descendants.push(child.id);
-        descendants = descendants.concat(getDescendants(child.id));
-      });
-      return descendants;
-    };
-
     window.openModal = (editId = null, parentId = null, isDeptArg = null) => {
       form.reset();
-      
       const isEditing = !!editId;
       let isDepartment = false;
 
@@ -558,46 +734,37 @@
           document.getElementById('name').value = node.name || '';
           document.getElementById('dept').value = node.dept || '';
           document.getElementById('issues').value = node.issues || '';
+          document.getElementById('isVacancy').checked = !!node.isVacancy;
         }
       } else {
         isDepartment = !!isDeptArg;
-        if (isDepartment) {
-          document.getElementById('modalTitle').textContent = 'Новый Отдел';
-        } else {
-          const parent = allNodes.find(n => n.id === parentId);
-          document.getElementById('modalTitle').textContent = `Новый сотрудник ${parent ? 'в ' + parent.role : ''}`;
-        }
+        document.getElementById('modalTitle').textContent = isDepartment ? 'Новый Отдел' : 'Новый сотрудник';
+        document.getElementById('isVacancy').checked = false;
       }
 
       document.getElementById('nodeId').value = editId || '';
       document.getElementById('isDepartment').value = isDepartment;
       
       // Заполняем список родителей
-      parentSelect.innerHTML = '<option value="">— Без начальника (Верхний уровень) —</option>';
-      
-      // Определяем, кого нельзя выбирать (себя и своих подчиненных)
+      parentSelect.innerHTML = '<option value="">— Без начальника —</option>';
       const forbiddenIds = isEditing ? [editId, ...getDescendants(editId)] : [];
-
       allNodes.forEach(n => {
-        if (forbiddenIds.includes(n.id)) return; // Пропускаем
+        if (forbiddenIds.includes(n.id)) return;
         const opt = document.createElement('option');
         opt.value = n.id;
-        opt.textContent = n.role + (n.name ? ` (${n.name})` : '') + (n.isDepartment ? ' [Отдел]' : '');
+        opt.textContent = n.role + (n.isDepartment ? ' [Отдел]' : '');
         parentSelect.appendChild(opt);
       });
 
-      // Устанавливаем текущего родителя, если редактируем
       if (isEditing) {
         const node = allNodes.find(n => n.id === editId);
         parentSelect.value = node.parentId || '';
-        document.getElementById('fieldParent').style.display = 'flex'; // Показываем выбор родителя
+        document.getElementById('fieldParent').style.display = 'flex';
       } else {
         parentSelect.value = parentId || '';
-        // При создании нового скрываем выбор родителя, так как он передан из кнопки "+"
         document.getElementById('fieldParent').style.display = 'none'; 
       }
 
-      // Настраиваем поля
       if (isDepartment) {
         document.getElementById('labelRole').textContent = 'Название отдела *';
         document.getElementById('role').placeholder = 'Например: Отдел продаж';
@@ -612,19 +779,22 @@
       document.getElementById('role').focus();
     };
 
+    const getDescendants = (pid) => {
+      let d = [];
+      allNodes.filter(n => n.parentId === pid).forEach(c => { d.push(c.id); d = d.concat(getDescendants(c.id)); });
+      return d;
+    };
+
     document.getElementById('addRootBtn').addEventListener('click', () => openModal(null, null, true));
     document.getElementById('cancelBtn').addEventListener('click', () => modal.classList.remove('visible'));
-    
-    modal.addEventListener('mousedown', (e) => {
-      if (e.target === modal) modal.classList.remove('visible');
-    });
+    modal.addEventListener('mousedown', (e) => { if (e.target === modal) modal.classList.remove('visible'); });
 
-    // Сохранение
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const editId = document.getElementById('nodeId').value;
       const isDepartment = document.getElementById('isDepartment').value === 'true';
       const newParentId = parentSelect.value || null;
+      const isVacancy = document.getElementById('isVacancy').checked;
       
       const data = {
         role: document.getElementById('role').value.trim(),
@@ -632,7 +802,8 @@
         dept: isDepartment ? '' : document.getElementById('dept').value.trim(),
         issues: isDepartment ? '' : document.getElementById('issues').value.trim(),
         parentId: newParentId,
-        isDepartment: isDepartment
+        isDepartment: isDepartment,
+        isVacancy: isVacancy
       };
 
       const btn = document.getElementById('submitBtn');
@@ -642,62 +813,28 @@
       try {
         if (editId) {
           const node = allNodes.find(n => n.id === editId);
-          // Если изменился родитель, нужно сдвинуть карточку, чтобы она оказалась рядом с новым шефом
           if (node.parentId !== newParentId && newParentId) {
             const newParent = allNodes.find(n => n.id === newParentId);
-            if (newParent) {
-              data.x = (newParent.x || 100) + (Math.random() * 60 - 30);
-              data.y = (newParent.y || 100) + 180;
-            }
+            if (newParent) { data.x = (newParent.x || 100) + 20; data.y = (newParent.y || 100) + 150; }
           }
           await updateDoc(doc(db, COLLECTION, editId), data);
         } else {
           if (newParentId) {
             const parent = allNodes.find(n => n.id === newParentId);
-            if (parent) {
-              data.x = (parent.x || 100) + (Math.random() * 60 - 30); 
-              data.y = (parent.y || 100) + 180; 
-            } else {
-              data.x = 300; data.y = 100;
-            }
-          } else {
-            data.x = 300; data.y = 100;
-          }
+            if (parent) { data.x = (parent.x || 100) + (Math.random() * 40 - 20); data.y = (parent.y || 100) + 150; }
+            else { data.x = 300; data.y = 100; }
+          } else { data.x = 300; data.y = 100; }
           
           data.createdAt = serverTimestamp();
+          data.collapsed = false;
           await addDoc(collection(db, COLLECTION), data);
         }
         modal.classList.remove('visible');
       } catch (err) {
-        console.error('Ошибка сохранения:', err);
         alert('Ошибка: ' + err.message);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Сохранить';
-      }
-    });
-
-    // Удаление
-    window.deleteNode = async (id) => {
-      const node = allNodes.find(n => n.id === id);
-      if (!node) return;
-
-      const descendants = getDescendants(id);
-      const count = descendants.length;
-
-      const confirmText = count > 0 
-        ? `Удалить "${node.role}" и всех её подчиненных (${count} чел.)?`
-        : `Удалить "${node.role}"?`;
-
-      if (!confirm(confirmText)) return;
-
-      try {
-        const idsToDelete = [id, ...descendants];
-        const promises = idsToDelete.map(nodeId => deleteDoc(doc(db, COLLECTION, nodeId)));
-        await Promise.all(promises);
-      } catch (err) {
-        console.error('Ошибка удаления:', err);
-        alert('Не удалось удалить: ' + err.message);
       }
     };
 
