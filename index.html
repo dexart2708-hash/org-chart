@@ -111,17 +111,34 @@
     .canvas { position: relative; width: 5000px; height: 5000px; min-width: 100%; min-height: 100%; transform-origin: 0 0; transition: transform 0.3s ease; }
     #lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 
+    /* ✅ КАРТОЧКИ: плавный переход для координат, анимация только для новых */
     .org-card {
       position: absolute; background: var(--surface-solid); border: 1px solid var(--border);
       border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; align-items: center;
       min-width: 180px; max-width: 240px; box-shadow: var(--shadow-sm);
-      transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
       z-index: 2; cursor: grab; touch-action: none; user-select: none;
+      transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                  top 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                  box-shadow var(--transition), 
+                  border-color var(--transition), 
+                  transform var(--transition);
+    }
+    .org-card.new-node {
       animation: cardIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
     }
     .org-card:active { cursor: grabbing; }
     .org-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); }
-    .org-card.dragging { box-shadow: var(--shadow-lg); border-color: var(--accent); z-index: 100; cursor: grabbing; opacity: 0.9; transform: scale(1.02); }
+    
+    /* ✅ ПРИ ПЕРЕТАСКИВАНИИ ОТКЛЮЧАЕМ ПЛАВНОСТЬ, ЧТОБЫ НЕ ОТСТАВАЛО ОТ МЫШИ */
+    .org-card.dragging { 
+      transition: none; 
+      box-shadow: var(--shadow-lg); 
+      border-color: var(--accent); 
+      z-index: 100; 
+      cursor: grabbing; 
+      opacity: 0.9; 
+      transform: scale(1.02); 
+    }
     .org-card.search-match { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.3); }
 
     .org-card.is-department { background: var(--accent-soft); border: 2px solid var(--accent); }
@@ -191,7 +208,7 @@
     .toast button { background: var(--accent); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: background 0.2s; }
     .toast button:hover { filter: brightness(1.1); }
 
-    /* ✅ ИДЕАЛЬНЫЙ ЭКСПОРТ: убираем прозрачность, тени и блеклость */
+    /* ✅ ИДЕАЛЬНЫЙ ЭКСПОРТ */
     body.exporting {
       --text: #000000 !important;
       --text-muted: #333333 !important;
@@ -358,14 +375,14 @@
     // Поиск
     const searchInput = document.getElementById('searchInput');
     searchInput.addEventListener('input', (e) => {
-      const query = e.target.value.toLowerCase().trim();
+      const queryText = e.target.value.toLowerCase().trim();
       document.querySelectorAll('.org-card').forEach(card => card.classList.remove('search-match'));
       
-      if (!query) return;
+      if (!queryText) return;
 
       const matchedNodes = allNodes.filter(n => 
-        (n.role && n.role.toLowerCase().includes(query)) || 
-        (n.name && n.name.toLowerCase().includes(query))
+        (n.role && n.role.toLowerCase().includes(queryText)) || 
+        (n.name && n.name.toLowerCase().includes(queryText))
       );
 
       if (matchedNodes.length > 0) {
@@ -413,22 +430,27 @@
       });
     }
 
-    // Отрисовка
+    // ✅ УМНАЯ ОТРИСОВКА (Diffing без мерцания)
     function renderTree() {
       const canvas = document.getElementById('canvas');
-      
-      Array.from(canvas.children).forEach(child => {
-        if (child.tagName !== 'svg') child.remove();
-      });
+      const emptyState = document.querySelector('.empty-state');
+      const loadingState = document.querySelector('.loading-state');
+
+      if (loadingState) loadingState.remove();
 
       if (allNodes.length === 0) {
-        const emptyDiv = document.createElement('div');
-        emptyDiv.className = 'empty-state';
-        emptyDiv.innerHTML = `<h2>Схема пуста</h2><p>Нажмите «Добавить Отдел», чтобы начать.</p>`;
-        canvas.appendChild(emptyDiv);
+        if (!emptyState) {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'empty-state';
+          emptyDiv.innerHTML = `<h2>Схема пуста</h2><p>Нажмите «Добавить Отдел», чтобы начать.</p>`;
+          canvas.appendChild(emptyDiv);
+        }
         document.getElementById('lines').innerHTML = '';
+        document.querySelectorAll('.org-card').forEach(el => el.remove());
         return;
       }
+
+      if (emptyState) emptyState.remove();
 
       const hiddenIds = new Set();
       allNodes.forEach(n => {
@@ -443,21 +465,27 @@
         }
       });
 
+      const nodeIdsInDB = new Set(allNodes.map(n => n.id));
+
+      // 1. Удаляем узлы, которых больше нет в базе (или они скрыты)
+      document.querySelectorAll('.org-card').forEach(el => {
+        const id = el.id.replace('node-', '');
+        if (!nodeIdsInDB.has(id)) {
+          el.remove();
+        }
+      });
+
+      // 2. Создаем или обновляем узлы
       allNodes.forEach(node => {
-        if (hiddenIds.has(node.id)) return;
+        let el = document.getElementById(`node-${node.id}`);
+        const isHidden = hiddenIds.has(node.id);
 
-        const el = document.createElement('div');
-        el.className = `org-card ${node.isDepartment ? 'is-department' : ''} ${node.isVacancy ? 'is-vacancy' : ''}`;
-        el.id = `node-${node.id}`;
-        el.style.left = `${node.x || 100}px`;
-        el.style.top = `${node.y || 100}px`;
-
+        // Формируем HTML контента
         const hasChildren = allNodes.some(n => n.parentId === node.id);
         const collapseBtnHtml = hasChildren ? `<button class="collapse-btn" onclick="toggleCollapse('${node.id}', ${!node.collapsed})">${node.collapsed ? '▼' : '▲'}</button>` : '';
-
         const issuesHtml = (!node.isDepartment && node.issues) ? `<div class="org-issues"><strong>💬 Вопросы:</strong>${esc(node.issues)}</div>` : '';
 
-        el.innerHTML = `
+        const newHtml = `
           ${node.isVacancy ? '<div class="vacancy-badge">Вакансия</div>' : ''}
           <div class="org-actions">
             <button class="add-btn" onclick="openModal(null, '${node.id}', false)" title="Добавить подчиненного">➕</button>
@@ -471,8 +499,44 @@
           ${collapseBtnHtml}
         `;
 
-        makeDraggable(el, node);
-        canvas.appendChild(el);
+        if (el) {
+          // Если элемент уже есть в DOM
+          if (isHidden) {
+            el.style.display = 'none';
+          } else {
+            el.style.display = 'flex';
+            
+            // Обновляем координаты, ТОЛЬКО если не тащим прямо сейчас
+            if (!el.classList.contains('dragging')) {
+              el.style.left = `${node.x || 100}px`;
+              el.style.top = `${node.y || 100}px`;
+            }
+
+            // Обновляем содержимое, ТОЛЬКО если оно изменилось (чтобы не сбивать ховер)
+            if (el.innerHTML.trim() !== newHtml.trim()) {
+              el.innerHTML = newHtml;
+            }
+
+            // Обновляем классы (на случай смены типа или вакансии)
+            el.className = `org-card ${node.isDepartment ? 'is-department' : ''} ${node.isVacancy ? 'is-vacancy' : ''} ${el.classList.contains('dragging') ? 'dragging' : ''} ${el.classList.contains('search-match') ? 'search-match' : ''}`;
+          }
+        } else {
+          // Если элемента нет — создаем новый
+          if (!isHidden) {
+            el = document.createElement('div');
+            el.id = `node-${node.id}`;
+            el.className = `org-card new-node ${node.isDepartment ? 'is-department' : ''} ${node.isVacancy ? 'is-vacancy' : ''}`;
+            el.style.left = `${node.x || 100}px`;
+            el.style.top = `${node.y || 100}px`;
+            el.innerHTML = newHtml;
+            
+            makeDraggable(el, node);
+            canvas.appendChild(el);
+
+            // Убираем класс анимации через 300мс
+            setTimeout(() => el.classList.remove('new-node'), 300);
+          }
+        }
       });
 
       setTimeout(drawLines, 50);
@@ -708,7 +772,7 @@
       });
     };
 
-    // ✅ ИДЕАЛЬНЫЙ ЭКСПОРТ В PDF (Обрезка по границам и контрастные цвета)
+    // Экспорт в PDF
     document.getElementById('exportBtn').addEventListener('click', () => {
       if (allNodes.length === 0) return;
       
@@ -716,14 +780,10 @@
       const oldText = btn.innerHTML;
       btn.innerHTML = '⏳...';
       
-      // 1. Временно сбрасываем зум, чтобы правильно посчитать координаты
       const oldZoom = zoom;
       document.getElementById('canvas').style.transform = 'scale(1)';
-      
-      // 2. Включаем контрастный режим для PDF
       document.body.classList.add('exporting');
 
-      // 3. Вычисляем границы схемы (Bounding Box)
       let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
       
       allNodes.forEach(node => {
@@ -738,13 +798,11 @@
         }
       });
 
-      // Добавляем отступы вокруг
       const padding = 50;
       minX -= padding; minY -= padding;
       const cropWidth = (maxX - minX) + padding;
       const cropHeight = (maxY - minY) + padding;
 
-      // Ждем чуть-чуть, чтобы стили экспорта применились
       setTimeout(() => {
         const element = document.getElementById('canvas');
         
@@ -756,7 +814,6 @@
             scale: 2, 
             useCORS: true, 
             logging: false,
-            // Обрезаем холст ровно по границам карточек!
             x: minX,
             y: minY,
             width: cropWidth,
