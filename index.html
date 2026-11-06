@@ -43,7 +43,7 @@
       --shadow-md: 0 4px 6px -1px rgba(45,42,38,0.1);
       --shadow-lg: 0 10px 15px -3px rgba(45,42,38,0.15);
       --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      --transition: 0.2s ease;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     /* 🌙 ТЁМНАЯ ТЕМА */
@@ -69,6 +69,12 @@
       background: var(--bg-1);
     }
 
+    /* Анимации */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
     .header {
       position: absolute; top: 0; left: 0; right: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
@@ -84,37 +90,40 @@
     .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .btn {
       font-family: var(--font); font-size: 0.8125rem; font-weight: 600;
-      padding: 6px 12px; border-radius: 6px; cursor: pointer;
+      padding: 8px 14px; border-radius: 6px; cursor: pointer;
       background: var(--btn-primary); color: #fff; border: 1px solid transparent;
-      display: flex; align-items: center; gap: 4px; transition: all var(--transition);
+      display: flex; align-items: center; gap: 6px; 
+      transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
     }
-    .btn:hover { background: var(--btn-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .btn:hover { background: var(--btn-primary-hover); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn:active { transform: translateY(0) scale(0.98); }
     .btn.secondary { background: var(--surface-solid); color: var(--text); border-color: var(--border); }
     .btn.secondary:hover { background: var(--surface-alt); border-color: var(--border-strong); }
     
     .search-box { position: relative; display: flex; align-items: center; margin-right: 10px; }
     .search-box input {
-      padding: 6px 12px 6px 30px; border-radius: 6px; border: 1px solid var(--border);
+      padding: 8px 12px 8px 32px; border-radius: 6px; border: 1px solid var(--border);
       background: var(--bg-1); color: var(--text); font-size: 0.8125rem; outline: none;
-      width: 200px; transition: border-color var(--transition);
+      width: 200px; transition: border-color var(--transition), box-shadow var(--transition);
     }
-    .search-box input:focus { border-color: var(--accent); }
-    .search-box svg { position: absolute; left: 8px; width: 14px; height: 14px; color: var(--text-muted); pointer-events: none; }
+    .search-box input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    .search-box svg { position: absolute; left: 10px; width: 14px; height: 14px; color: var(--text-muted); pointer-events: none; }
 
     .canvas-container { position: absolute; inset: 0; top: 65px; overflow: auto; background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 20px 20px; }
-    .canvas { position: relative; width: 5000px; height: 5000px; min-width: 100%; min-height: 100%; transform-origin: 0 0; transition: transform 0.2s ease; }
+    .canvas { position: relative; width: 5000px; height: 5000px; min-width: 100%; min-height: 100%; transform-origin: 0 0; transition: transform 0.3s ease; }
     #lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 
     .org-card {
       position: absolute; background: var(--surface-solid); border: 1px solid var(--border);
       border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; align-items: center;
       min-width: 180px; max-width: 240px; box-shadow: var(--shadow-sm);
-      transition: box-shadow var(--transition), border-color var(--transition);
+      transition: box-shadow var(--transition), border-color var(--transition), transform var(--transition);
       z-index: 2; cursor: grab; touch-action: none; user-select: none;
+      animation: cardIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
     }
     .org-card:active { cursor: grabbing; }
-    .org-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
-    .org-card.dragging { box-shadow: var(--shadow-lg); border-color: var(--accent); z-index: 100; cursor: grabbing; opacity: 0.9; }
+    .org-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .org-card.dragging { box-shadow: var(--shadow-lg); border-color: var(--accent); z-index: 100; cursor: grabbing; opacity: 0.9; transform: scale(1.02); }
     .org-card.search-match { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.3); }
 
     .org-card.is-department { background: var(--accent-soft); border: 2px solid var(--accent); }
@@ -130,17 +139,20 @@
     .org-issues strong { color: var(--text); font-weight: 600; display: block; margin-bottom: 2px; }
 
     .org-actions {
-      position: absolute; top: -12px; right: -12px; display: flex; gap: 4px;
-      opacity: 0; transition: opacity var(--transition); background: var(--surface-solid);
-      padding: 4px; border-radius: 6px; border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 5;
+      position: absolute; top: -14px; right: -14px; display: flex; gap: 4px;
+      opacity: 0; transition: opacity var(--transition), transform var(--transition); 
+      background: var(--surface-solid); padding: 4px; border-radius: 8px; 
+      border: 1px solid var(--border); box-shadow: var(--shadow-sm); z-index: 5;
+      transform: translateY(5px);
     }
-    .org-card:hover .org-actions { opacity: 1; }
+    .org-card:hover .org-actions { opacity: 1; transform: translateY(0); }
     .org-actions button {
-      width: 24px; height: 24px; padding: 0; border: none; border-radius: 4px;
+      width: 26px; height: 26px; padding: 0; border: none; border-radius: 4px;
       background: transparent; color: var(--text-muted); cursor: pointer;
-      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; 
+      transition: all var(--transition);
     }
-    .org-actions button:hover { background: var(--surface-alt); color: var(--text); }
+    .org-actions button:hover { background: var(--surface-alt); color: var(--text); transform: scale(1.1); }
     .org-actions button.add-btn:hover { color: var(--accent); background: var(--accent-soft); }
     .org-actions button.delete-btn:hover { color: #dc2626; background: #fef2f2; }
 
@@ -148,22 +160,25 @@
       position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%);
       width: 20px; height: 20px; border-radius: 50%; background: var(--surface-solid);
       border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
-      cursor: pointer; z-index: 6; font-size: 0.75rem; color: var(--text-muted); transition: all var(--transition);
+      cursor: pointer; z-index: 6; font-size: 0.75rem; color: var(--text-muted); 
+      transition: all var(--transition);
       box-shadow: var(--shadow-sm); padding: 0;
     }
-    .collapse-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .collapse-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); transform: translateX(-50%) scale(1.15); }
 
-    .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); pointer-events: none; }
-    .loading-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); font-size: 1.25rem; font-weight: 600; }
+    .empty-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); pointer-events: none; animation: fadeIn 0.5s ease; }
+    .loading-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); font-size: 1.25rem; font-weight: 600; animation: fadeIn 0.5s ease; }
 
-    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(18,20,23,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.visible { display: flex; }
-    .modal { background: var(--surface-solid); border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; }
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(18,20,23,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity 0.3s ease; }
+    .modal-overlay.visible { display: flex; opacity: 1; }
+    .modal { background: var(--surface-solid); border-radius: 16px; padding: 24px; width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); border: 1px solid var(--border); max-height: 90vh; overflow-y: auto; transform: scale(0.95); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    .modal-overlay.visible .modal { transform: scale(1); }
+    
     .modal-title { font-size: 1.125rem; font-weight: 700; margin-bottom: 16px; }
     .field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
     label { font-size: 0.6875rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
-    input, textarea, select { font-family: var(--font); font-size: 0.875rem; padding: 8px 10px; color: var(--text); background: var(--bg-1); border: 1px solid var(--border-strong); border-radius: 6px; outline: none; width: 100%; transition: border-color var(--transition); }
-    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    input, textarea, select { font-family: var(--font); font-size: 0.875rem; padding: 10px 12px; color: var(--text); background: var(--bg-1); border: 1px solid var(--border-strong); border-radius: 6px; outline: none; width: 100%; transition: border-color var(--transition), box-shadow var(--transition); }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
     textarea { resize: vertical; min-height: 60px; }
     
     .checkbox-field { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; cursor: pointer; }
@@ -171,12 +186,33 @@
     .checkbox-field label { margin-bottom: 0; text-transform: none; font-size: 0.8125rem; color: var(--text); }
 
     .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
-    .modal-footer button { flex: 1; justify-content: center; padding: 10px; }
+    .modal-footer button { flex: 1; justify-content: center; padding: 12px; }
 
     .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-    .toast { background: var(--surface-solid); border: 1px solid var(--border); box-shadow: var(--shadow-lg); padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; gap: 16px; font-size: 0.875rem; font-weight: 500; animation: slideUp 0.3s ease; }
-    .toast button { background: var(--accent); color: #fff; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.75rem; }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .toast { background: var(--surface-solid); border: 1px solid var(--border); box-shadow: var(--shadow-lg); padding: 12px 20px; border-radius: 8px; display: flex; align-items: center; gap: 16px; font-size: 0.875rem; font-weight: 500; animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .toast button { background: var(--accent); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.75rem; transition: background 0.2s; }
+    .toast button:hover { filter: brightness(1.1); }
+
+    /* ✅ Стили для идеального PDF */
+    body.exporting .org-actions,
+    body.exporting .collapse-btn,
+    body.exporting .vacancy-badge { display: none !important; }
+
+    body.exporting .org-card {
+      background: #ffffff !important;
+      border: 1px solid #cccccc !important;
+      box-shadow: none !important;
+      animation: none !important;
+      transform: none !important;
+    }
+    body.exporting .org-card.is-department {
+      background: #F9F3E6 !important;
+      border: 2px solid #C89B3C !important;
+    }
+    body.exporting .org-card.is-vacancy {
+      border: 2px dashed #f59e0b !important;
+      background: #FFFBF0 !important;
+    }
 
     @media print {
       .header, .org-actions, .collapse-btn, .toast-container, .loading-state { display: none !important; }
@@ -207,7 +243,8 @@
       <span id="zoomLevel" style="font-size: 0.75rem; font-weight: 600; min-width: 35px; text-align: center;">100%</span>
       <button class="btn secondary" id="zoomInBtn" title="Увеличить">➕</button>
       
-      <button class="btn secondary" id="autoLayoutBtn" title="Автоматическая расстановка">🪄 Выровнять</button>
+      <!-- ✅ Убрали эмодзи с кнопки Выровнять -->
+      <button class="btn secondary" id="autoLayoutBtn" title="Автоматическая расстановка">Выровнять</button>
       <button class="btn secondary" id="exportBtn" title="Скачать PDF">📄 PDF</button>
       <button class="btn secondary" id="printBtn" title="Печать">🖨️</button>
       <button class="btn secondary" id="themeToggle">🌙</button>
@@ -272,7 +309,6 @@
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js';
-    // ✅ Убрали persistentLocalCache, используем стандартный getFirestore
     import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, query, onSnapshot, serverTimestamp, writeBatch } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -285,7 +321,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app); // ✅ Чистый Firestore без кэша
+    const db = getFirestore(app);
 
     const COLLECTION = 'org_structure';
     let allNodes = [];
@@ -349,14 +385,13 @@
     function subscribeToData() {
       if (unsubscribe) unsubscribe();
       
-      // Показываем загрузку
       const canvas = document.getElementById('canvas');
       Array.from(canvas.children).forEach(child => {
         if (child.tagName !== 'svg') child.remove();
       });
       const loadingDiv = document.createElement('div');
       loadingDiv.className = 'loading-state';
-      loadingDiv.innerHTML = 'Загрузка данных из облака...';
+      loadingDiv.innerHTML = 'Загрузка...';
       canvas.appendChild(loadingDiv);
 
       const q = query(collection(db, COLLECTION));
@@ -364,8 +399,8 @@
         allNodes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderTree();
       }, err => {
-        console.error("Ошибка доступа к Firebase:", err);
-        alert("Ошибка Firebase: " + err.message + "\nПроверьте правила безопасности (Rules) в консоли Firebase.");
+        console.error(err);
+        alert("Ошибка Firebase: " + err.message);
       });
     }
 
@@ -535,6 +570,7 @@
       if (allNodes.length === 0) return;
       
       const btn = document.getElementById('autoLayoutBtn');
+      const oldText = btn.textContent;
       btn.textContent = '⏳...';
       btn.disabled = true;
 
@@ -594,7 +630,7 @@
         console.error(err);
         alert('Ошибка при выравнивании');
       } finally {
-        btn.textContent = '🪄 Выровнять';
+        btn.textContent = oldText;
         btn.disabled = false;
       }
     });
@@ -663,27 +699,35 @@
       });
     };
 
-    // Экспорт
+    // ✅ Экспорт в PDF с фиксом прозрачности и кнопок
     document.getElementById('exportBtn').addEventListener('click', () => {
       const btn = document.getElementById('exportBtn');
       const oldText = btn.innerHTML;
       btn.innerHTML = '⏳...';
       
-      const element = document.getElementById('canvas');
-      const opt = {
-        margin: 10,
-        filename: 'org_structure.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a2', orientation: 'landscape' }
-      };
+      // Добавляем класс, который делает отделы непрозрачными и скрывает стрелочки
+      document.body.classList.add('exporting');
+      
+      // Ждем чуть-чуть, чтобы стили применились
+      setTimeout(() => {
+        const element = document.getElementById('canvas');
+        const opt = {
+          margin: 10,
+          filename: 'org_structure.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a2', orientation: 'landscape' }
+        };
 
-      html2pdf().set(opt).from(element).save().then(() => {
-        btn.innerHTML = oldText;
-      }).catch(e => {
-        alert("Ошибка экспорта: " + e.message);
-        btn.innerHTML = oldText;
-      });
+        html2pdf().set(opt).from(element).save().then(() => {
+          btn.innerHTML = oldText;
+          document.body.classList.remove('exporting');
+        }).catch(e => {
+          alert("Ошибка экспорта: " + e.message);
+          btn.innerHTML = oldText;
+          document.body.classList.remove('exporting');
+        });
+      }, 100);
     });
 
     document.getElementById('printBtn').addEventListener('click', () => window.print());
